@@ -489,8 +489,9 @@
     .ryder-match-row:last-child { border-bottom: none; }
     .ryder-match-teams {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
+      gap: 8px;
       margin-bottom: 4px;
     }
     .ryder-team-name { font-weight: 600; font-size: 14px; }
@@ -1010,7 +1011,7 @@
   </div>
   <div class="tab" onclick="showScreen('scores', this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
-    Score Entry
+    Scores
   </div>
   <div class="tab" onclick="showScreen('leaderboard', this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
@@ -2239,23 +2240,49 @@ function renderRyder() {
 
     const matchRows = dayTees.length ? dayTees.map((t, i) => {
       const playerIds = [t.player1_id, t.player2_id, t.player3_id, t.player4_id].filter(Boolean);
-      const redPlayers  = playerIds.filter(id => state.players.find(p => String(p.id) === String(id))?.team?.toLowerCase() === 'red');
-      const bluePlayers = playerIds.filter(id => state.players.find(p => String(p.id) === String(id))?.team?.toLowerCase() === 'blue');
 
-      const redNames  = redPlayers.map(id => state.players.find(p => String(p.id) === String(id))?.name?.split(' ')[0] || '?').join(' & ');
-      const blueNames = bluePlayers.map(id => state.players.find(p => String(p.id) === String(id))?.name?.split(' ')[0] || '?').join(' & ');
+      // build player objects with name and team
+      const players = playerIds.map(id => {
+        const p = state.players.find(p => String(p.id) === String(id));
+        return { id, name: p?.name || '?', team: p?.team?.toLowerCase() || '' };
+      });
 
-      // find saved result for this tee time
+      // group by tee time position: slots 1&2 = pair A, slots 3&4 = pair B
+      const pairA = players.slice(0, 2);
+      const pairB = players.slice(2, 4);
+
+      // determine which pair is red and which is blue
+      // if Ryder Cup teams set, use team color; otherwise use position (A=red side, B=blue side)
+      const pairATeam = pairA[0]?.team || 'red';
+      const pairBTeam = pairB[0]?.team || 'blue';
+
+      const pairAColor = pairATeam === 'blue' ? 'var(--blue)' : 'var(--red)';
+      const pairBColor = pairBTeam === 'red'  ? 'var(--red)'  : 'var(--blue)';
+
+      const pairANames = pairA.map(p => p.name).join(' & ');
+      const pairBNames = pairB.map(p => p.name).join(' & ');
+
+      // find saved result
       const matchId = `match_d${d}_${t.id}`;
-      const saved = state.matchups.find(m => m.id === matchId);
-      const winner = saved?.winner || '';
+      const saved   = state.matchups.find(m => m.id === matchId);
+      const winner  = saved?.winner || '';
 
       return `
         <div class="ryder-match-row">
           <div class="ryder-match-teams">
-            <span class="ryder-team-name red-name">${redNames || '—'}</span>
+            <div style="flex:1;">
+              <div style="font-size:10px;font-weight:600;color:${pairAColor};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">
+                ${pairATeam === 'blue' ? t2 : t1}
+              </div>
+              <div style="font-weight:600;font-size:14px;color:${pairAColor};">${pairANames || '—'}</div>
+            </div>
             <span class="ryder-vs">vs</span>
-            <span class="ryder-team-name blue-name">${blueNames || '—'}</span>
+            <div style="flex:1;text-align:right;">
+              <div style="font-size:10px;font-weight:600;color:${pairBColor};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">
+                ${pairBTeam === 'red' ? t1 : t2}
+              </div>
+              <div style="font-weight:600;font-size:14px;color:${pairBColor};">${pairBNames || '—'}</div>
+            </div>
           </div>
           <div class="ryder-match-time">${t.tee_time} · Hole ${t.starting_hole || 1}</div>
           <div class="ryder-result-btns">
@@ -2272,8 +2299,7 @@ function renderRyder() {
               ${t2.replace('Team ','')} Win
             </button>
           </div>
-        </div>
-      `;
+        </div>`;
     }).join('') : `
       <div style="font-size:13px;color:var(--gray-mid);text-align:center;padding:12px 0;">
         Add tee times on the Courses tab first
