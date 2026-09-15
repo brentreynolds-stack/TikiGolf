@@ -2308,19 +2308,26 @@ async function setMatchResult(matchId, day, teeTimeId, winner) {
 }
 
 // ── SKINS ────────────────────────────────────────────────────────
+// skinsModes stores per-day toggle: 'individual' or 'team'
+const skinsModes = {};
+
+function toggleSkinsMode(day) {
+  skinsModes[day] = skinsModes[day] === 'team' ? 'individual' : 'team';
+  renderSkins();
+}
+
 function renderSkins() {
   const el = document.getElementById('skins-content');
 
-  const pot      = parseFloat(state.config.skins_pot || state.config['skins_pot']) || 0;
-  const bdPot    = parseFloat(state.config.birdies_deuces_pot || state.config['birdies_deuces_pot']) || 0;
+  const pot       = parseFloat(state.config.skins_pot || state.config['skins_pot']) || 0;
+  const bdPot     = parseFloat(state.config.birdies_deuces_pot || state.config['birdies_deuces_pot']) || 0;
   const numRounds = parseInt(state.config.num_rounds) || 4;
-  const dailyPot  = pot / numRounds; // each day gets an equal share
+  const dailyPot  = pot / numRounds;
 
-  // ── SKINS: lowest unique score per hole, resets each day ──
-  // No carry logic — tied holes simply produce no skin winner
   const derivedSkins = [];
   state.courses.forEach((course, dayIdx) => {
-    const day = String(dayIdx + 1);
+    const day    = String(dayIdx + 1);
+    const isTeam = skinsModes[day] === 'team';
 
     for (let h = 1; h <= 18; h++) {
       const holeScores = state.scores
@@ -2330,99 +2337,119 @@ function renderSkins() {
 
       if (!holeScores.length) continue;
 
-      const par      = parseInt(course[`h${h}_par`]) || 4;
-      const low      = Math.min(...holeScores.map(s => s.n));
-      const winners  = holeScores.filter(s => s.n === low);
-      const skinWon  = winners.length === 1;
-      const skinWinnerId = skinWon ? winners[0].player_id : null;
+      const par     = parseInt(course[`h${h}_par`]) || 4;
+      const low     = Math.min(...holeScores.map(s => s.n));
+      const winners = holeScores.filter(s => s.n === low);
 
-      // collect every player who had a birdie/eagle/deuce on this hole
-      const events = holeScores
-        .filter(s => s.n <= par - 1 || s.n === 2)
-        .map(s => {
-          const player = state.players.find(p => String(p.id) === String(s.player_id));
-          return {
-            playerId: s.player_id,
-            name:     player?.name || '?',
-            score:    s.n,
-            isSkin:   skinWon && String(s.player_id) === String(skinWinnerId),
-            isBirdie: s.n === par - 1,
-            isEagle:  s.n <= par - 2,
-          };
+      let skinWon       = false;
+      let skinWinnerIds = [];
+      let isTeamWin     = false;
+
+      if (winners.length === 1) {
+        skinWon       = true;
+        skinWinnerIds = [winners[0].player_id];
+      } else if (isTeam && winners.length === 2) {
+        const id1 = String(winners[0].player_id);
+        const id2 = String(winners[1].player_id);
+
+        // Check tee time pairings first (P1&P2 = partners, P3&P4 = partners)
+        const teeTime = state.teeTimes.find(t => {
+          const slots = [t.player1_id, t.player2_id, t.player3_id, t.player4_id].map(String);
+          return slots.includes(id1) && slots.includes(id2);
         });
 
-      // ensure skin winner always appears even if no birdie/eagle
-      if (skinWon) {
-        const alreadyIn = events.some(e => String(e.playerId) === String(skinWinnerId));
-        if (!alreadyIn) {
-          const player = state.players.find(p => String(p.id) === String(skinWinnerId));
-          events.unshift({
-            playerId: skinWinnerId,
-            name:     player?.name || '?',
-            score:    low,
-            isSkin:   true,
-            isBirdie: low === par - 1,
-            isEagle:  low <= par - 2,
-          });
+        let arePartners = false;
+        if (teeTime) {
+          const pair1 = [String(teeTime.player1_id), String(teeTime.player2_id)];
+          const pair2 = [String(teeTime.player3_id), String(teeTime.player4_id)];
+          arePartners = (pair1.includes(id1) && pair1.includes(id2)) ||
+                        (pair2.includes(id1) && pair2.includes(id2));
+        } else {
+          // Fall back to Red/Blue team designation
+          const p1 = state.players.find(p => String(p.id) === id1);
+          const p2 = state.players.find(p => String(p.id) === id2);
+          arePartners = p1 && p2 && p1.team && p2.team &&
+                        p1.team.toLowerCase() === p2.team.toLowerCase();
+        }
+
+        if (arePartners) {
+          skinWon       = true;
+          skinWinnerIds = [winners[0].player_id, winners[1].player_id];
+          isTeamWin     = true;
         }
       }
 
-      // only record holes where something notable happened
+      const eventPlayerIds = new Set([
+        ...holeScores.filter(s => s.n <= par - 1).map(s => s.player_id),
+        ...skinWinnerIds,
+      ]);
+
+      const events = [...eventPlayerIds].map(pid => {
+        const s      = holeScores.find(x => String(x.player_id) === String(pid));
+        const player = state.players.find(p => String(p.id) === String(pid));
+        const score  = s?.n ?? low;
+        return {
+          playerId: pid,
+          name:     player?.name || '?',
+          score,
+          isSkin:   skinWinnerIds.some(id => String(id) === String(pid)),
+          isTeamWin,
+          isBirdie: score === par - 1,
+          isEagle:  score <= par - 2,
+        };
+      });
+
       if (events.length === 0 && !skinWon) continue;
 
       derivedSkins.push({
-        day, hole: h, par,
-        tied: !skinWon && winners.length > 1,
+        day, hole: h, par, isTeam,
+        tied: !skinWon,
+        isTeamWin,
+        skinWinnerIds,
         courseName: course.name || `Day ${day}`,
         events,
       });
     }
   });
 
-  // group by day
   const byDay = {};
   derivedSkins.forEach(s => {
     if (!byDay[s.day]) byDay[s.day] = [];
     byDay[s.day].push(s);
   });
 
-  // count skins per player per day for per-day payouts
-  const skinsByPlayerByDay = {}; // { day: { playerName: count } }
-  derivedSkins.filter(s => !s.tied && s.events).forEach(s => {
-    const skinWinner = s.events.find(e => e.isSkin);
-    if (!skinWinner) return;
-    const name = skinWinner.name;
-    if (!skinsByPlayerByDay[s.day]) skinsByPlayerByDay[s.day] = {};
-    if (!skinsByPlayerByDay[s.day][name]) skinsByPlayerByDay[s.day][name] = 0;
-    skinsByPlayerByDay[s.day][name]++;
+  const skinsByPlayerByDay = {};
+  derivedSkins.filter(s => !s.tied).forEach(s => {
+    const share = s.isTeamWin ? 0.5 : 1;
+    s.skinWinnerIds.forEach(pid => {
+      const player = state.players.find(p => String(p.id) === String(pid));
+      const name   = player?.name || pid;
+      if (!skinsByPlayerByDay[s.day]) skinsByPlayerByDay[s.day] = {};
+      if (!skinsByPlayerByDay[s.day][name]) skinsByPlayerByDay[s.day][name] = 0;
+      skinsByPlayerByDay[s.day][name] += share;
+    });
   });
 
-  // determine "today's" day based on which course date matches today
-  const today = new Date().toDateString();
-  const todayDayIdx = state.courses.findIndex(c => {
-    if (!c.date) return false;
-    return new Date(c.date).toDateString() === today;
-  });
-  // default: today's day expanded; if no match found, expand day 1
+  const today       = new Date().toDateString();
+  const todayDayIdx = state.courses.findIndex(c => c.date && new Date(c.date).toDateString() === today);
   const defaultOpenDay = todayDayIdx >= 0 ? String(todayDayIdx + 1) : '1';
 
   const skinRows = Object.entries(byDay).map(([day, skins]) => {
     const isOpen   = day === defaultOpenDay;
+    const isTeam   = skinsModes[day] === 'team';
     const wonCount = skins.filter(s => !s.tied).length;
-    const dayPot   = dailyPot;
+    const perSkin  = wonCount > 0 ? Math.floor(dailyPot / wonCount) : 0;
 
-    // per-day payout rows — payout = player's skins / total skins × daily pot
-    const dayWinners = skinsByPlayerByDay[day] || {};
+    const dayWinners    = skinsByPlayerByDay[day] || {};
     const dayPayoutRows = Object.entries(dayWinners)
       .sort((a,b) => b[1] - a[1])
       .map(([name, count]) => {
-        const perSkin = Math.floor(dayPot / wonCount);
-        const payout  = perSkin * count;
+        const payout = Math.floor(count * perSkin);
         return `
           <div style="display:flex;justify-content:space-between;align-items:center;
                       padding:8px 14px;border-bottom:1px solid var(--gray-light);font-size:13px;">
             <span style="font-weight:500;">${name}</span>
-            <span style="color:var(--gray-mid);">${count} skin${count!==1?'s':''}</span>
+            <span style="color:var(--gray-mid);">${count} skin${count !== 1 ? 's' : ''}</span>
             <span style="font-weight:700;color:var(--green-mid);">$${payout}</span>
           </div>`;
       }).join('');
@@ -2431,10 +2458,12 @@ function renderSkins() {
       s.events.map((e, i) => `
         <div class="skin-event-row">
           <div class="skin-event-hole">${i === 0 ? s.hole : ''}</div>
-          <div class="skin-event-player">${e.name}</div>
+          <div class="skin-event-player">
+            ${e.name}${s.isTeamWin && e.isSkin ? ' <span style="font-size:10px;color:var(--gray-mid);">(team)</span>' : ''}
+          </div>
           <div class="skin-event-score">${e.score}</div>
-          <div class="skin-event-icon">${e.isSkin  ? '💵' : ''}</div>
-          <div class="skin-event-icon">${e.isEagle ? '🦅' : e.isBirdie ? '🐦' : ''}</div>
+          <div class="skin-event-icon">${e.isSkin   ? '💵' : ''}</div>
+          <div class="skin-event-icon">${e.isEagle  ? '🦅' : e.isBirdie ? '🐦' : ''}</div>
         </div>`).join('')
     ).join('');
 
@@ -2444,12 +2473,32 @@ function renderSkins() {
           <div>
             <span class="collapsible-title">${skins[0]?.courseName || 'Day ' + day}</span>
             <span class="collapsible-meta">
-              $${dayPot.toFixed(0)} pot · ${wonCount} skin${wonCount!==1?'s':''} won · $${Math.floor(dayPot / wonCount)}/skin
+              $${dailyPot.toFixed(0)} pot · ${wonCount} skin${wonCount!==1?'s':''} won · $${perSkin}/skin · ${isTeam ? 'Team' : 'Individual'}
             </span>
           </div>
           <span class="collapsible-chevron ${isOpen ? 'open' : ''}" id="chevron-${day}">▾</span>
         </div>
         <div class="collapsible-body ${isOpen ? 'open' : ''}" id="skins-body-${day}">
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:10px 14px;background:var(--gray-light);">
+            <span style="font-size:12px;font-weight:600;color:var(--gray-dark);">Skins Mode</span>
+            <div style="display:flex;gap:6px;">
+              <button onclick="toggleSkinsMode('${day}')"
+                style="padding:5px 14px;border-radius:6px;border:1.5px solid var(--green-dark);
+                       font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;
+                       background:${isTeam ? 'var(--white)' : 'var(--green-dark)'};
+                       color:${isTeam ? 'var(--green-dark)' : 'var(--gold)'};">
+                Individual
+              </button>
+              <button onclick="toggleSkinsMode('${day}')"
+                style="padding:5px 14px;border-radius:6px;border:1.5px solid var(--green-dark);
+                       font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;
+                       background:${isTeam ? 'var(--green-dark)' : 'var(--white)'};
+                       color:${isTeam ? 'var(--gold)' : 'var(--green-dark)'};">
+                Team
+              </button>
+            </div>
+          </div>
           <div class="skin-event-table">
             <div class="skin-event-header">
               <div>Hole</div><div>Player</div><div>Score</div>
@@ -2468,19 +2517,15 @@ function renderSkins() {
   }).join('');
 
   // ── BIRDIES & EAGLES ──
-  // Birdie (1 under) = 1 share, Eagle (2 under) = 2 shares, Double eagle+ (3+ under) = 3 shares
   const bdByPlayer = {};
   state.scores.forEach(s => {
     const strokes = parseInt(s.strokes);
     const par     = parseInt(s.par);
     if (isNaN(strokes) || isNaN(par)) return;
-
-    const diff = par - strokes; // positive = under par
-    if (diff < 1) return;       // par or worse — skip
-
-    const shares = diff === 1 ? 1 : diff === 2 ? 2 : 3; // birdie=1, eagle=2, double eagle+=3
+    const diff = par - strokes;
+    if (diff < 1) return;
+    const shares = diff === 1 ? 1 : diff === 2 ? 2 : 3;
     const type   = diff === 1 ? 'birdies' : diff === 2 ? 'eagles' : 'doubles';
-
     if (!bdByPlayer[s.player_id]) bdByPlayer[s.player_id] = { birdies: 0, eagles: 0, doubles: 0, shares: 0 };
     bdByPlayer[s.player_id][type]++;
     bdByPlayer[s.player_id].shares += shares;
