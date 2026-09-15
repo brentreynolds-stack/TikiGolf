@@ -2479,12 +2479,13 @@ function renderSkins() {
           </div>`;
       }).join('');
 
-    const tableRows = skins.filter(s => !s.tied).map(s =>
+    const tableRows = skins.filter(s => !s.tied || s.events.some(e => e.isBirdie || e.isEagle)).map(s =>
       s.events.map((e, i) => `
-        <div class="skin-event-row">
+        <div class="skin-event-row" ${s.tied ? 'style="opacity:0.6;"' : ''}>
           <div class="skin-event-hole">${i === 0 ? s.hole : ''}</div>
           <div class="skin-event-player">
-            ${e.name}${s.isTeamWin && e.isSkin ? ' <span style="font-size:10px;color:var(--gray-mid);">(team)</span>' : ''}
+            ${e.name}${s.tied && i === 0 ? ' <span style="font-size:10px;color:var(--gray-mid);">(tied)</span>' : ''}
+            ${s.isTeamWin && e.isSkin ? ' <span style="font-size:10px;color:var(--gray-mid);">(team)</span>' : ''}
           </div>
           <div class="skin-event-score">${e.score}</div>
           <div class="skin-event-icon">${e.isSkin   ? '💵' : ''}</div>
