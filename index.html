@@ -1783,8 +1783,12 @@ function buildScorecard() {
   // existing scores for this player/day
   const existing = {};
   state.scores
-    .filter(s => s.player_id === playerId && s.day === day)
+    .filter(s => String(s.player_id) === String(playerId) && String(s.day) === String(day))
     .forEach(s => { existing[s.hole] = s.strokes; });
+
+  const savedHoleCount = Object.keys(existing).length;
+  const isComplete     = savedHoleCount >= 18;
+  const isLocked       = isComplete && !adminUnlocked;
 
   const holes = [];
   let frontPar = 0, backPar = 0;
@@ -1795,20 +1799,26 @@ function buildScorecard() {
   }
 
   const holeRows = holes.map(({ h, par }) => {
-    const val = existing[h] !== undefined ? existing[h] : par;
+    const val  = existing[h] !== undefined ? existing[h] : par;
     const diff = parseInt(val) - par;
+
+    const scoreCell = isLocked
+      ? `<div style="text-align:center;font-weight:700;font-size:17px;padding:4px 0;">
+           ${val}
+         </div>`
+      : `<div class="score-ctrl">
+           <button class="score-btn minus" onclick="adjustScore(${h}, ${par}, -1)">−</button>
+           <input type="number" class="hole-input" id="hole-${h}"
+                  min="1" max="12" value="${val}"
+                  oninput="onScoreInput(${h}, ${par}, this.value)" />
+           <button class="score-btn plus" onclick="adjustScore(${h}, ${par}, 1)">+</button>
+         </div>`;
+
     return `
     <div class="hole-row" id="hole-row-${h}">
       <div class="hole-num">${h}</div>
       <div class="hole-par">Par ${par}</div>
-      <div class="score-ctrl">
-        <button class="score-btn minus" onclick="adjustScore(${h}, ${par}, -1)">−</button>
-        <input type="number" class="hole-input" id="hole-${h}"
-               min="1" max="12"
-               value="${val}"
-               oninput="onScoreInput(${h}, ${par}, this.value)" />
-        <button class="score-btn plus" onclick="adjustScore(${h}, ${par}, 1)">+</button>
-      </div>
+      ${scoreCell}
       <div class="hole-diff ${diffClass(diff)}" id="hole-diff-${h}">
         ${diffLabel(diff)}
       </div>
@@ -1817,9 +1827,25 @@ function buildScorecard() {
   `}).join('');
 
   const totalPar = frontPar + backPar;
+  const totalScore = Object.values(existing).reduce((a,b) => a + parseInt(b), 0);
+  const totalDiff  = totalScore - totalPar;
+
+  const footerRight = isLocked
+    ? `<div style="text-align:center;font-weight:700;">${totalScore}</div>
+       <div style="font-weight:700;color:${totalDiff > 0 ? 'var(--red)' : totalDiff < 0 ? '#2e7d32' : 'var(--gray-mid)'};">
+         ${totalDiff > 0 ? '+' : ''}${totalDiff}
+       </div>`
+    : `<div id="score-total" style="text-align:center;">—</div>
+       <div id="score-total-diff">—</div>`;
+
+  const saveButton = isLocked
+    ? `<div style="text-align:center;padding:14px;font-size:13px;color:var(--gray-mid);">
+         🔒 Scorecard submitted — enter PIN to edit
+       </div>`
+    : `<button class="save-btn" onclick="saveScores('${playerId}', '${day}')">Save Scorecard</button>`;
 
   container.innerHTML = `
-    <div class="section-label">${course.name} · Day ${day}</div>
+    <div class="section-label">${course.name} · Day ${day}${isLocked ? ' · <span style="color:var(--gray-mid);">🔒 Locked</span>' : ''}</div>
     <div class="scorecard">
       <div class="scorecard-header">
         <div>Hole</div><div>Par</div><div style="text-align:center;">Score</div><div>+/-</div>
@@ -1828,14 +1854,13 @@ function buildScorecard() {
       <div class="scorecard-footer">
         <div></div>
         <div>Total Par ${totalPar}</div>
-        <div id="score-total" style="text-align:center;">—</div>
-        <div id="score-total-diff">—</div>
+        ${footerRight}
       </div>
     </div>
-    <button class="save-btn" onclick="saveScores('${playerId}', '${day}')">Save Scorecard</button>
+    ${saveButton}
   `;
 
-  updateScoreTotal(holes.map(h => h.par));
+  if (!isLocked) updateScoreTotal(holes.map(h => h.par));
 }
 
 function adjustScore(hole, par, delta) {
