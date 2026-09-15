@@ -2430,7 +2430,7 @@ function renderSkins() {
           <div class="skin-event-score">${e.score}</div>
           <div class="skin-event-icon">${e.isSkin   ? '🏆' : ''}</div>
           <div class="skin-event-icon">${e.isEagle  ? '🦅' : e.isBirdie ? '🐦' : ''}</div>
-          <div class="skin-event-icon">${e.isDeuce  ? '⭐' : ''}</div>
+          <div class="skin-event-icon">${e.isDeuce ? '⭐' : ''}</div>
         </div>`).join('')
     ).join('');
 
@@ -2449,7 +2449,7 @@ function renderSkins() {
           <div class="skin-event-table">
             <div class="skin-event-header">
               <div>Hole</div><div>Player</div><div>Score</div>
-              <div>🏆</div><div>🐦</div><div>⭐</div>
+              <div>🏆</div><div>🐦</div><div>🦅</div>
             </div>
             ${tableRows || '<div style="padding:14px;text-align:center;font-size:13px;color:var(--gray-mid);">No skins won yet</div>'}
           </div>
@@ -2463,42 +2463,41 @@ function renderSkins() {
       </div>`;
   }).join('');
 
-  // ── BIRDIES & DEUCES ──
-  // Derive directly from strokes vs par — don't trust stored is_birdie flag
-  // since old saves may have flagged eagles incorrectly
+  // ── BIRDIES & EAGLES ──
+  // Birdie (1 under) = 1 share, Eagle (2 under) = 2 shares, Double eagle+ (3+ under) = 3 shares
   const bdByPlayer = {};
   state.scores.forEach(s => {
     const strokes = parseInt(s.strokes);
     const par     = parseInt(s.par);
     if (isNaN(strokes) || isNaN(par)) return;
 
-    const isBirdie = strokes <= par - 1; // birdie or better (includes eagles)
-    const isDeuce  = strokes === 2;
+    const diff = par - strokes; // positive = under par
+    if (diff < 1) return;       // par or worse — skip
 
-    if (!isBirdie && !isDeuce) return;
-    if (!bdByPlayer[s.player_id]) bdByPlayer[s.player_id] = { birdies: 0, deuces: 0 };
-    if (isBirdie) bdByPlayer[s.player_id].birdies++;
-    if (isDeuce)  bdByPlayer[s.player_id].deuces++;
+    const shares = diff === 1 ? 1 : diff === 2 ? 2 : 3; // birdie=1, eagle=2, double eagle+=3
+    const type   = diff === 1 ? 'birdies' : diff === 2 ? 'eagles' : 'doubles';
+
+    if (!bdByPlayer[s.player_id]) bdByPlayer[s.player_id] = { birdies: 0, eagles: 0, doubles: 0, shares: 0 };
+    bdByPlayer[s.player_id][type]++;
+    bdByPlayer[s.player_id].shares += shares;
   });
 
-  // each birdie = 1 share, each deuce = 2 shares
-  const bdTotalShares = Object.values(bdByPlayer).reduce((a,b) => a + b.birdies + b.deuces * 2, 0);
+  const bdTotalShares = Object.values(bdByPlayer).reduce((a,b) => a + b.shares, 0);
   const bdShareValue  = bdTotalShares > 0 ? bdPot / bdTotalShares : 0;
 
   const bdRows = Object.entries(bdByPlayer)
-    .sort((a,b) => (b[1].birdies + b[1].deuces*2) - (a[1].birdies + a[1].deuces*2))
+    .sort((a,b) => b[1].shares - a[1].shares)
     .map(([id, counts]) => {
-      const name    = state.players.find(p => String(p.id) === String(id))?.name || id;
-      const shares  = counts.birdies + counts.deuces * 2;
-      const payout  = Math.floor(shares * bdShareValue);
+      const name   = state.players.find(p => String(p.id) === String(id))?.name || id;
+      const payout = Math.floor(counts.shares * bdShareValue);
       return `
         <div class="skin-row">
           <div style="font-weight:500;">${name}</div>
           <div class="skin-score" style="color:#2e7d32">🐦 ${counts.birdies}</div>
-          <div class="skin-score" style="color:var(--gold)">⭐ ${counts.deuces}</div>
+          <div class="skin-score" style="color:var(--gold)">🦅 ${counts.eagles}${counts.doubles > 0 ? `+${counts.doubles}` : ''}</div>
           <div class="skin-score" style="color:var(--green-mid);font-weight:700;">$${payout}</div>
         </div>`;
-    }).join('') || `<div style="padding:16px;text-align:center;font-size:13px;color:var(--gray-mid);">No birdies or deuces yet</div>`;
+    }).join('') || `<div style="padding:16px;text-align:center;font-size:13px;color:var(--gray-mid);">No birdies or eagles yet</div>`;
 
   el.innerHTML = `
     <div class="skins-summary">
@@ -2508,19 +2507,19 @@ function renderSkins() {
         <div style="font-size:11px;color:var(--gray-mid);margin-top:2px;">$${dailyPot.toFixed(0)}/day × ${numRounds} rounds</div>
       </div>
       <div style="text-align:right">
-        <div class="pot-label">Birdies & Deuces</div>
+        <div class="pot-label">Birdies & Eagles</div>
         <div class="pot-amount">$${bdPot}</div>
-        <div style="font-size:11px;color:var(--gray-mid);margin-top:2px;">Birdie = 1 share · Deuce = 2 shares</div>
+        <div style="font-size:11px;color:var(--gray-mid);margin-top:2px;">Birdie=1 · Eagle=2 · Double eagle=3</div>
       </div>
     </div>
 
     <div class="section-label">Skins Results</div>
     ${skinRows || `<div class="empty"><p>No scores entered yet.<br>Skins are calculated automatically.</p></div>`}
 
-    <div class="section-label" style="margin-top:20px;">Birdies & Deuces</div>
+    <div class="section-label" style="margin-top:20px;">Birdies & Eagles</div>
     <div class="skins-table">
       <div class="skin-row" style="background:var(--green-dark);color:var(--gold);font-size:11px;font-weight:600;">
-        <div>Player</div><div>Birdies</div><div>Deuces</div><div>Est. Payout</div>
+        <div>Player</div><div>🐦</div><div>🦅</div><div>Est. Payout</div>
       </div>
       ${bdRows}
     </div>
