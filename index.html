@@ -1011,7 +1011,7 @@
   </div>
   <div class="tab" onclick="showScreen('scores', this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
-    Score Entry
+    Scores
   </div>
   <div class="tab" onclick="showScreen('leaderboard', this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
@@ -1506,11 +1506,35 @@ function showCourseDetail(idx) {
       }).join('')
     : `<div style="padding:14px;text-align:center;font-size:13px;color:var(--gray-mid);">No tee times added yet</div>`;
 
+  // ── Day navigation tabs
+  const dayTabs = state.courses.map((course, i) => {
+    const isActive = i === idx;
+    const dayNum   = i + 1;
+    const shortName = course.name ? course.name.split(' ')[0] : `Day ${dayNum}`;
+    return `
+      <button onclick="showCourseDetail(${i})"
+        style="flex:1;padding:7px 4px;border:none;border-radius:8px;
+               font-size:11px;font-weight:600;font-family:'Inter',sans-serif;
+               cursor:pointer;transition:all 0.15s;white-space:nowrap;overflow:hidden;
+               text-overflow:ellipsis;
+               background:${isActive ? 'var(--green-dark)' : 'var(--white)'};
+               color:${isActive ? 'var(--gold)' : 'var(--gray-dark)'};
+               box-shadow:${isActive ? 'none' : '0 1px 3px rgba(0,0,0,0.08)'};">
+        <div style="font-size:9px;opacity:0.7;margin-bottom:1px;">Day ${dayNum}</div>
+        ${shortName}
+      </button>`;
+  }).join('');
+
   document.getElementById('courses-detail-view').innerHTML = `
     <button class="back-btn" onclick="closeCourseDetail()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
       Courses
     </button>
+
+    <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--gray-light);
+                padding:5px;border-radius:10px;">
+      ${dayTabs}
+    </div>
 
     ${heroHtml}
 
