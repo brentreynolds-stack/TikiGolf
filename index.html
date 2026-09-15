@@ -524,7 +524,7 @@
     }
     .skin-event-header {
       display: grid;
-      grid-template-columns: 38px 1fr 44px 32px 32px 32px;
+      grid-template-columns: 38px 1fr 44px 32px 32px;
       padding: 8px 12px;
       background: var(--green-mid);
       color: var(--white);
@@ -535,7 +535,7 @@
     .skin-event-header > div:nth-child(2) { text-align: left; }
     .skin-event-row {
       display: grid;
-      grid-template-columns: 38px 1fr 44px 32px 32px 32px;
+      grid-template-columns: 38px 1fr 44px 32px 32px;
       padding: 9px 12px;
       border-bottom: 1px solid var(--gray-light);
       align-items: center;
@@ -2341,11 +2341,10 @@ function renderSkins() {
             isSkin:   skinWon && String(s.player_id) === String(skinWinnerId),
             isBirdie: s.n === par - 1,
             isEagle:  s.n <= par - 2,
-            isDeuce:  s.n === 2,
           };
         });
 
-      // ensure skin winner always appears even if no birdie/deuce
+      // ensure skin winner always appears even if no birdie/eagle
       if (skinWon) {
         const alreadyIn = events.some(e => String(e.playerId) === String(skinWinnerId));
         if (!alreadyIn) {
@@ -2357,7 +2356,6 @@ function renderSkins() {
             isSkin:   true,
             isBirdie: low === par - 1,
             isEagle:  low <= par - 2,
-            isDeuce:  low === 2,
           });
         }
       }
@@ -2428,9 +2426,8 @@ function renderSkins() {
           <div class="skin-event-hole">${i === 0 ? s.hole : ''}</div>
           <div class="skin-event-player">${e.name}</div>
           <div class="skin-event-score">${e.score}</div>
-          <div class="skin-event-icon">${e.isSkin   ? '🏆' : ''}</div>
-          <div class="skin-event-icon">${e.isEagle  ? '🦅' : e.isBirdie ? '🐦' : ''}</div>
-          <div class="skin-event-icon">${e.isDeuce ? '⭐' : ''}</div>
+          <div class="skin-event-icon">${e.isSkin  ? '💵' : ''}</div>
+          <div class="skin-event-icon">${e.isEagle ? '🦅' : e.isBirdie ? '🐦' : ''}</div>
         </div>`).join('')
     ).join('');
 
@@ -2449,7 +2446,7 @@ function renderSkins() {
           <div class="skin-event-table">
             <div class="skin-event-header">
               <div>Hole</div><div>Player</div><div>Score</div>
-              <div>🏆</div><div>🐦</div><div>🦅</div>
+              <div>💵</div><div>🐦🦅</div>
             </div>
             ${tableRows || '<div style="padding:14px;text-align:center;font-size:13px;color:var(--gray-mid);">No skins won yet</div>'}
           </div>
