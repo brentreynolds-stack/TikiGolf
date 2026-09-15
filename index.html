@@ -2543,7 +2543,7 @@ function renderSkins() {
         <div class="skin-row">
           <div style="font-weight:500;">${name}</div>
           <div class="skin-score" style="color:#2e7d32">🐦 ${counts.birdies}</div>
-          <div class="skin-score" style="color:var(--gold)">🦅 ${counts.eagles}${counts.doubles > 0 ? `+${counts.doubles}` : ''}</div>
+          <div class="skin-score" style="color:var(--gold)">🦅 ${counts.eagles + counts.doubles}</div>
           <div class="skin-score" style="color:var(--green-mid);font-weight:700;">$${payout}</div>
         </div>`;
     }).join('') || `<div style="padding:16px;text-align:center;font-size:13px;color:var(--gray-mid);">No birdies or eagles yet</div>`;
