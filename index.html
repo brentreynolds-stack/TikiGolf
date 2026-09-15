@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Tiki Golf 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-dark:  #1a2e1a;
+      --green-mid:   #2d4a2d;
+      --green-light: #4a7c4a;
+      --gold:        #c9a84c;
+      --gold-light:  #e8c96d;
+      --cream:       #f7f4ed;
+      --red:         #c0392b;
+      --blue:        #1a4a8a;
+      --white:       #ffffff;
+      --gray-light:  #f0ede6;
+      --gray-mid:    #b0a898;
+      --gray-dark:   #555;
+      --tab-h:       56px;
+      --header-h:    110px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--green-dark);
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: var(--green-dark);
+      padding: 20px 20px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      min-height: var(--header-h);
+    }
+    .app-header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      letter-spacing: 2px;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .app-header .subtitle {
+      font-size: 12px;
+      color: var(--gray-mid);
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+    .sync-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .sync-btn {
+      background: var(--green-mid);
+      color: var(--gold-light);
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .sync-btn:active { opacity: 0.7; }
+    .sync-status {
+      font-size: 11px;
+      color: var(--gray-mid);
+    }
+    .sync-status.ok  { color: #6abf6a; }
+    .sync-status.err { color: #e07070; }
+
+    /* ── TABS ── */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: var(--green-dark);
+      display: flex;
+      height: var(--tab-h);
+      z-index: 100;
+      border-top: 1px solid var(--green-mid);
+    }
+    .tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--gray-mid);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 500;
+      transition: color 0.15s;
+      padding: 6px 2px;
+      user-select: none;
+    }
+    .tab svg { width: 20px; height: 20px; }
+    .tab.active { color: var(--gold); }
+    .tab:active { opacity: 0.7; }
+
+    /* ── CONTENT ── */
+    .content {
+      flex: 1;
+      padding: 16px 16px calc(var(--tab-h) + 16px);
+      overflow-y: auto;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-mid);
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+      margin-top: 20px;
+      text-transform: uppercase;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* ── COURSE CARDS ── */
+    .course-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .course-card {
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .course-card:active { transform: scale(0.97); }
+    .course-img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      background: var(--green-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .course-img-placeholder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .course-img-placeholder svg { width: 40px; height: 40px; opacity: 0.4; fill: white; }
+    .course-info { padding: 10px 10px 12px; }
+    .course-name { font-weight: 600; font-size: 13px; line-height: 1.2; }
+    .course-date { font-size: 11px; color: var(--gray-mid); margin-top: 3px; }
+    .course-format { 
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--green-mid);
+      background: var(--gray-light);
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+
+    /* ── COURSE DETAIL ── */
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gold);
+      background: none;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 16px;
+      padding: 0;
+    }
+    .detail-hero {
+      width: 100%;
+      aspect-ratio: 16/7;
+      background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .detail-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1px; }
+    .detail-subtitle { font-size: 13px; color: var(--gray-dark); margin-top: 2px; }
+    .detail-rows { margin-top: 16px; }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray-light);
+      font-size: 14px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row .label { color: var(--gray-mid); }
+    .detail-row .value { font-weight: 500; text-align: right; max-width: 60%; }
+
+    /* ── LEADERBOARD ── */
+    .day-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .day-tab {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--white);
+      color: var(--gray-dark);
+      border: 1.5px solid var(--gray-light);
+      cursor: pointer;
+    }
+    .day-tab.active {
+      background: var(--green-dark);
+      color: var(--gold);
+      border-color: var(--green-dark);
+    }
+
+    .leaderboard-table {
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .lb-header {
+      display: grid;
+      grid-template-columns: 36px 1fr 52px 52px;
+      padding: 10px 14px;
+      background: var(--green-dark);
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .lb-row {
+      display: grid;
+      grid-template-columns: 36px 1fr 52px 52px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--gray-light);
+      align-items: center;
+      font-size: 14px;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-row.highlight { background: rgba(201,168,76,0.08); }
+    .lb-pos { font-weight: 700; color: var(--gray-mid); font-size: 13px; }
+    .lb-pos.top { color: var(--gold); }
+    .lb-name { font-weight: 500; }
+    .lb-name .team-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .lb-score { text-align: center; font-weight: 600; }
+    .lb-total { text-align: center; font-weight: 700; color: var(--green-mid); }
+    .flight-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .flight-a { background: #e8f4e8; color: var(--green-mid); }
+    .flight-b { background: #e8eef8; color: var(--blue); }
+
+    /* ── SCORE ENTRY ── */
+    .player-select-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .field-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .field-label { font-size: 11px; font-weight: 600; color: var(--gray-mid); text-transform: uppercase; letter-spacing: 0.5px; }
+    select, input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--gray-light);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      background: var(--white);
+      color: var(--green-dark);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    select:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--green-light);
+    }
+
+    .scorecard {
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .scorecard-header {
+      display: grid;
+      grid-template-columns: 44px 56px 1fr 72px;
+      padding: 10px 14px;
+      background: var(--green-dark);
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .hole-row {
+      display: grid;
+      grid-template-columns: 44px 56px 1fr 72px;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--gray-light);
+      align-items: center;
+      gap: 4px;
+    }
+    .hole-row:last-child { border-bottom: none; }
+    .hole-num  { font-weight: 700; font-size: 15px; }
+    .hole-par  { font-size: 13px; color: var(--gray-mid); }
+    .hole-diff {
+      text-align: center;
+      font-weight: 600;
+      font-size: 12px;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .hole-diff.eagle  { background:#fdf3d8; color:#b8860b; }
+    .hole-diff.birdie { background:#e8f5e9; color:#2e7d32; }
+    .hole-diff.par    { color: var(--gray-mid); }
+    .hole-diff.bogey  { background:#fff3e0; color:#e65100; }
+    .hole-diff.double { background:#fce4e4; color:#c62828; }
+
+    /* +/- score control */
+    .score-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .score-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s;
+    }
+    .score-btn:active { transform: scale(0.88); }
+    .score-btn.minus {
+      background: #fce4e4;
+      color: #c62828;
+    }
+    .score-btn.plus {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .hole-input {
+      width: 38px !important;
+      height: 34px !important;
+      padding: 4px !important;
+      text-align: center;
+      font-weight: 700;
+      font-size: 16px !important;
+      border-radius: 6px !important;
+      flex-shrink: 0;
+    }
+
+    .scorecard-footer {
+      display: grid;
+      grid-template-columns: 44px 56px 1fr 72px;
+      padding: 12px 14px;
+      background: var(--green-dark);
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .save-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--green-dark);
+      color: var(--gold);
+      border: none;
+      border-radius: 12px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    .save-btn:active { opacity: 0.8; }
+
+    /* ── RYDER CUP ── */
+    .ryder-header {
+      background: var(--green-dark);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .team-score-block { text-align: center; }
+    .team-name { font-size: 12px; font-weight: 600; color: var(--gray-mid); letter-spacing: 0.5px; }
+    .team-pts {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      line-height: 1;
+    }
+    .team-pts.red  { color: #e07070; }
+    .team-pts.blue { color: #70a0e0; }
+    .vs-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--gray-mid); }
+
+    .match-card {
+      background: var(--white);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .match-day-label { font-size: 10px; font-weight: 600; color: var(--gray-mid); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase; }
+    .match-row { display: flex; justify-content: space-between; align-items: center; }
+    .match-player { font-weight: 500; font-size: 14px; }
+    .match-result {
+      font-weight: 700;
+      font-size: 13px;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+    .match-result.red-win  { background: rgba(192,57,43,0.12); color: var(--red); }
+    .match-result.blue-win { background: rgba(26,74,138,0.12); color: var(--blue); }
+    .match-result.half     { background: var(--gray-light); color: var(--gray-dark); }
+    .match-result.pending  { background: var(--gray-light); color: var(--gray-mid); }
+
+    .ryder-match-row {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    .ryder-match-row:last-child { border-bottom: none; }
+    .ryder-match-teams {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .ryder-team-name { font-weight: 600; font-size: 14px; }
+    .red-name  { color: var(--red); }
+    .blue-name { color: var(--blue); }
+    .ryder-vs  { font-size: 11px; color: var(--gray-mid); font-weight: 600; }
+    .ryder-match-time {
+      font-size: 11px;
+      color: var(--gray-mid);
+      margin-bottom: 8px;
+    }
+    .ryder-result-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .ryder-btn {
+      flex: 1;
+      padding: 7px 4px;
+      border: 1.5px solid var(--gray-light);
+      border-radius: 7px;
+      background: var(--white);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-dark);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ryder-btn:active { opacity: 0.7; }
+    .ryder-btn.active-red  { background: var(--red);  color: white; border-color: var(--red); }
+    .ryder-btn.active-blue { background: var(--blue); color: white; border-color: var(--blue); }
+    .ryder-btn.active-half { background: var(--gray-dark); color: white; border-color: var(--gray-dark); }
+
+    /* ── SKIN EVENT TABLE (6 col) ── */
+    .skin-event-table {
+      background: var(--white);
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+    }
+    .skin-event-header {
+      display: grid;
+      grid-template-columns: 38px 1fr 44px 32px 32px 32px;
+      padding: 8px 12px;
+      background: var(--green-mid);
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .skin-event-header > div:nth-child(2) { text-align: left; }
+    .skin-event-row {
+      display: grid;
+      grid-template-columns: 38px 1fr 44px 32px 32px 32px;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--gray-light);
+      align-items: center;
+      font-size: 13px;
+    }
+    .skin-event-row:last-child { border-bottom: none; }
+    .skin-event-hole {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--green-dark);
+    }
+    .skin-event-player { font-weight: 500; }
+    .skin-event-score  { text-align: center; font-weight: 600; }
+    .skin-event-icon   { text-align: center; font-size: 15px; }
+    /* ── SKINS SUMMARY ── */
+    .skins-summary {
+      background: var(--green-dark);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pot-label { font-size: 12px; color: var(--gray-mid); }
+    .pot-amount {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .skins-table {
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .skin-row {
+      display: grid;
+      grid-template-columns: 36px 1fr 60px 60px;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--gray-light);
+      align-items: center;
+      font-size: 14px;
+    }
+    .skin-row:last-child { border-bottom: none; }
+    .skin-hole { font-weight: 700; color: var(--gray-mid); }
+    .skin-winner { font-weight: 500; }
+    .skin-score { text-align: center; }
+    .skin-badge {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-birdie { color: #2e7d32; }
+    .badge-deuce  { color: var(--gold); }
+    .badge-carry  { color: var(--gray-mid); font-style: italic; }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray-mid);
+    }
+    .empty svg { width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px; }
+    .empty p { font-size: 14px; line-height: 1.5; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--tab-h) + 12px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green-dark);
+      color: var(--gold);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    .flight-c { background: #f8ede8; color: #c0552b; }
+    .flight-d { background: #f0e8f8; color: #7b2bc0; }
+
+    /* ── COLLAPSIBLE DAYS ── */
+    .collapsible-day {
+      margin-bottom: 10px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .collapsible-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      background: var(--green-dark);
+      cursor: pointer;
+      user-select: none;
+    }
+    .collapsible-header:active { opacity: 0.85; }
+    .collapsible-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--white);
+      display: block;
+    }
+    .collapsible-meta {
+      font-size: 11px;
+      color: var(--gray-mid);
+      margin-top: 2px;
+      display: block;
+    }
+    .collapsible-chevron {
+      color: var(--gold);
+      font-size: 18px;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    .collapsible-chevron.open { transform: rotate(180deg); }
+    .collapsible-body {
+      display: none;
+    }
+    .collapsible-body.open { display: block; }
+
+    /* ── PIN MODAL ── */
+    .pin-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 400;
+      align-items: center;
+      justify-content: center;
+    }
+    .pin-modal-overlay.active { display: flex; }
+    .pin-box {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 280px;
+      text-align: center;
+    }
+    .pin-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 1px;
+      color: var(--green-dark);
+      margin-bottom: 6px;
+    }
+    .pin-subtitle {
+      font-size: 12px;
+      color: var(--gray-mid);
+      margin-bottom: 16px;
+    }
+    .pin-input {
+      width: 100%;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      padding: 10px;
+      border: 2px solid var(--gray-light);
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      color: var(--green-dark);
+      background: var(--cream);
+      margin-bottom: 14px;
+    }
+    .pin-input:focus { outline: none; border-color: var(--green-light); }
+    .pin-input.shake {
+      animation: shake 0.35s ease;
+      border-color: var(--red);
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-5px); }
+      80%      { transform: translateX(5px); }
+    }
+    .pin-actions { display: flex; gap: 8px; }
+    .pin-cancel {
+      flex: 1; padding: 11px;
+      background: var(--gray-light); color: var(--gray-dark);
+      border: none; border-radius: 8px;
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+    }
+    .pin-submit {
+      flex: 2; padding: 11px;
+      background: var(--green-dark); color: var(--gold);
+      border: none; border-radius: 8px;
+      font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px;
+      cursor: pointer;
+    }
+
+    /* ── TEE TIMES ── */
+    .tee-times-list {
+      background: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .tee-time-row {
+      display: flex;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--gray-light);
+      align-items: flex-start;
+    }
+    .tee-time-row:last-child { border-bottom: none; }
+    .tee-time-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+      align-items: center;
+      margin-left: auto;
+    }
+    .tee-action-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: none;
+      background: var(--gray-light);
+      color: var(--gray-dark);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .tee-action-btn:active { opacity: 0.7; }
+    .tee-delete-btn { background: #fce4e4; color: var(--red); }
+    .tee-time-slot {
+      min-width: 68px;
+      flex-shrink: 0;
+    }
+    .tee-time-clock {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--green-dark);
+    }
+    .tee-time-hole {
+      font-size: 10px;
+      color: var(--gray-mid);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .tee-time-players { flex: 1; }
+    .tee-time-names {
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+    .tee-time-note {
+      font-size: 11px;
+      color: var(--gray-mid);
+      margin-top: 3px;
+      font-style: italic;
+    }
+    .add-tee-btn {
+      background: var(--green-dark);
+      color: var(--gold);
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+    .add-tee-btn:active { opacity: 0.7; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 300;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-sheet {
+      background: var(--cream);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 430px;
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+      max-height: 90dvh;
+      overflow-y: auto;
+    }
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--gray-mid);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+      opacity: 0.4;
+    }
+    .modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1px;
+      color: var(--green-dark);
+      margin-bottom: 16px;
+    }
+    .modal-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .modal-field { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+    .modal-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn-cancel {
+      flex: 1;
+      padding: 14px;
+      background: var(--gray-light);
+      color: var(--gray-dark);
+      border: none;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-save {
+      flex: 2;
+      padding: 14px;
+      background: var(--green-dark);
+      color: var(--gold);
+      border: none;
+      border-radius: 10px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+
+    /* ── LOADING ── */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--gray-mid);
+      font-size: 14px;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--gray-light);
+      border-top-color: var(--green-light);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <h1 id="app-title">Tiki Golf</h1>
+  <div class="subtitle" id="app-subtitle">Loading trip data...</div>
+  <div class="sync-row">
+    <button class="sync-btn" onclick="connectGoogleAccount()">Connect Google</button>
+    <button class="sync-btn" onclick="syncAll()">⟳ Sync</button>
+    <span class="sync-status" id="sync-status">Not synced</span>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+  <!-- COURSES SCREEN -->
+  <div class="screen active" id="screen-courses">
+    <div id="courses-list-view">
+      <div class="loading"><div class="spinner"></div>Loading courses...</div>
+    </div>
+    <div id="courses-detail-view" style="display:none;"></div>
+  </div>
+
+  <!-- SCORES SCREEN -->
+  <div class="screen" id="screen-scores">
+    <div class="player-select-row">
+      <div class="field-group">
+        <div class="field-label">Player</div>
+        <select id="score-player">
+          <option value="">Select player...</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Day</div>
+        <select id="score-day">
+          <option value="1">Day 1</option>
+          <option value="2">Day 2</option>
+          <option value="3">Day 3</option>
+          <option value="4">Day 4</option>
+        </select>
+      </div>
+    </div>
+    <div id="scorecard-container">
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+        <p>Select a player and day<br>to enter scores</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD SCREEN -->
+  <div class="screen" id="screen-leaderboard">
+    <div class="day-tabs" id="lb-day-tabs">
+      <div class="day-tab active" onclick="setLbDay('overall', this)">Overall</div>
+      <div class="day-tab" onclick="setLbDay('1', this)">Day 1</div>
+      <div class="day-tab" onclick="setLbDay('2', this)">Day 2</div>
+      <div class="day-tab" onclick="setLbDay('3', this)">Day 3</div>
+      <div class="day-tab" onclick="setLbDay('4', this)">Day 4</div>
+    </div>
+    <div id="leaderboard-content">
+      <div class="loading"><div class="spinner"></div>Loading scores...</div>
+    </div>
+  </div>
+
+  <!-- RYDER CUP SCREEN -->
+  <div class="screen" id="screen-ryder">
+    <div id="ryder-content">
+      <div class="loading"><div class="spinner"></div>Loading Ryder Cup...</div>
+    </div>
+  </div>
+
+  <!-- SKINS SCREEN -->
+  <div class="screen" id="screen-skins">
+    <div id="skins-content">
+      <div class="loading"><div class="spinner"></div>Loading skins...</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <div class="tab active" onclick="showScreen('courses', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
+    Courses
+  </div>
+  <div class="tab" onclick="showScreen('scores', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+    Scores
+  </div>
+  <div class="tab" onclick="showScreen('leaderboard', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    Standings
+  </div>
+  <div class="tab" onclick="showScreen('ryder', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l4 4"/></svg>
+    Ryder Cup
+  </div>
+  <div class="tab" onclick="showScreen('skins', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+    Skins
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- PIN AUTH MODAL -->
+<div class="pin-modal-overlay" id="pin-modal">
+  <div class="pin-box">
+    <div class="pin-title">Admin Access</div>
+    <div class="pin-subtitle">Enter your admin PIN to continue</div>
+    <input class="pin-input" id="pin-input" type="password" inputmode="numeric"
+           maxlength="8" placeholder="••••"
+           onkeydown="if(event.key==='Enter')submitPin()" />
+    <div class="pin-actions">
+      <button class="pin-cancel" onclick="cancelPin()">Cancel</button>
+      <button class="pin-submit" onclick="submitPin()">Unlock</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="tee-time-modal" onclick="if(event.target===this)closeTeeTimeModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title" id="ttm-modal-title" style="margin:0;">Add Tee Time</div>
+      <button id="ttm-delete-btn" style="display:none;background:#fce4e4;color:var(--red);
+              border:none;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;
+              font-family:'Inter',sans-serif;cursor:pointer;" onclick="deleteTeeTime()">
+        🗑 Delete
+      </button>
+    </div>
+
+    <!-- hidden template options populated by JS -->
+    <select id="ttm-player-options" style="display:none"></select>
+
+    <div class="modal-row">
+      <div class="modal-field">
+        <div class="modal-label">Tee Time</div>
+        <input type="time" id="ttm-time" style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-light);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;background:var(--white);" />
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Starting Hole</div>
+        <select id="ttm-hole">
+          <option value="1">Hole 1</option>
+          <option value="10">Hole 10</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-label" style="margin-bottom:8px;">Players in Group</div>
+    <div class="modal-row">
+      <div class="modal-field">
+        <div class="modal-label">Player 1</div>
+        <select id="ttm-p1"></select>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Player 2</div>
+        <select id="ttm-p2"></select>
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field">
+        <div class="modal-label">Player 3</div>
+        <select id="ttm-p3"></select>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Player 4</div>
+        <select id="ttm-p4"></select>
+      </div>
+    </div>
+
+    <div class="modal-field" style="margin-bottom:0;">
+      <div class="modal-label">Notes (optional)</div>
+      <input type="text" id="ttm-notes" placeholder="e.g. Cart #4, Shotgun start..."
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-light);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;background:var(--white);" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTeeTimeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveTeeTime()">Save Tee Time</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     CONFIG — loaded from config.js (not this file)
+     config.js stays on your machine and is never shared
+════════════════════════════════════════ -->
+<script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+const CONFIG = {
+  API_KEY:        TIKI_CONFIG.API_KEY || TIKI_CONFIG.SHEETS_API_KEY,
+  GOOGLE_CLIENT_ID: TIKI_CONFIG.GOOGLE_CLIENT_ID || '',
+  SPREADSHEET_ID: TIKI_CONFIG.SPREADSHEET_ID,
+};
+
+// ── STATE ──────────────────────────────────────────────────────────
+const state = {
+  config:   {},
+  players:  [],
+  courses:  [],
+  scores:   [],
+  skins:    [],
+  birdies:  [],
+  matchups: [],
+  teeTimes: [],
+  lbDay:    'overall',
+  loaded:   false,
+  authToken: null,
+  googleTokenClient: null,
+};
+
+// ── GOOGLE SHEETS API ──────────────────────────────────────────────
+const BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
+
+function getSheetsAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.authToken) headers.Authorization = `Bearer ${state.authToken}`;
+  else if (CONFIG.API_KEY) headers['X-Goog-Api-Key'] = CONFIG.API_KEY;
+  return headers;
+}
+
+async function readSheet(range) {
+  let url = `${BASE}/${CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
+  const headers = getSheetsAuthHeaders();
+  if (!state.authToken) url += `?key=${CONFIG.API_KEY}`;
+  const r = await fetch(url, { headers });
+  if (!r.ok) throw new Error(`Sheets read failed: ${r.status}`);
+  const d = await r.json();
+  return d.values || [];
+}
+
+async function writeSheet(range, values) {
+  let url = `${BASE}/${CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  if (!state.authToken) url += `&key=${CONFIG.API_KEY}`;
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: getSheetsAuthHeaders(),
+    body: JSON.stringify({ range, majorDimension: 'ROWS', values }),
+  });
+  if (!r.ok) throw new Error(`Sheets write failed: ${r.status}`);
+  return r.json();
+}
+
+async function appendSheet(range, values) {
+  let url = `${BASE}/${CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  if (!state.authToken) url += `&key=${CONFIG.API_KEY}`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: getSheetsAuthHeaders(),
+    body: JSON.stringify({ range, majorDimension: 'ROWS', values }),
+  });
+  if (!r.ok) throw new Error(`Sheets append failed: ${r.status}`);
+  return r.json();
+}
+
+async function connectGoogleAccount() {
+  if (!CONFIG.GOOGLE_CLIENT_ID || CONFIG.GOOGLE_CLIENT_ID.includes('YOUR_')) {
+    showToast('Add your Google OAuth client ID to config.js');
+    return;
+  }
+
+  if (!window.google?.accounts?.oauth2) {
+    showToast('Google auth script is still loading');
+    return;
+  }
+
+  if (!state.googleTokenClient) {
+    state.googleTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CONFIG.GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/spreadsheets',
+      callback: (response) => {
+        if (response.error) {
+          console.error(response);
+          showToast('Google sign-in failed');
+          return;
+        }
+        state.authToken = response.access_token;
+        const status = document.getElementById('sync-status');
+        status.textContent = 'Google connected';
+        status.className = 'sync-status ok';
+        showToast('✓ Google Sheets connected');
+      },
+    });
+  }
+
+  state.googleTokenClient.requestAccessToken();
+}
+
+async function ensureGoogleAccessForWrite() {
+  if (state.authToken) return true;
+
+  if (!CONFIG.GOOGLE_CLIENT_ID || CONFIG.GOOGLE_CLIENT_ID.includes('YOUR_')) {
+    showToast('Add your Google OAuth client ID to config.js');
+    return false;
+  }
+
+  if (!window.google?.accounts?.oauth2) {
+    showToast('Google auth script not ready');
+    return false;
+  }
+
+  return new Promise((resolve) => {
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CONFIG.GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/spreadsheets',
+      callback: (response) => {
+        if (response.error) {
+          console.error(response);
+          showToast('Google sign-in required to save');
+          resolve(false);
+          return;
+        }
+        state.authToken = response.access_token;
+        resolve(true);
+      },
+    });
+
+    tokenClient.requestAccessToken();
+  });
+}
+
+// ── PARSE HELPERS ──────────────────────────────────────────────────
+function rowsToObjects(rows) {
+  if (!rows || rows.length < 2) return [];
+  const [headers, ...data] = rows;
+  return data.map((row, i) => {
+    const obj = { _rowNum: i + 2 }; // +2 = 1-based + header row
+    headers.forEach((h, j) => { obj[h] = row[j] || ''; });
+    return obj;
+  });
+}
+
+function configToObject(rows) {
+  const obj = {};
+  rows.forEach(([k, v]) => { if (k) obj[k] = v || ''; });
+  return obj;
+}
+
+// ── SYNC ──────────────────────────────────────────────────────────
+async function safeReadSheet(range, fallback = []) {
+  try {
+    return await readSheet(range);
+  } catch(e) {
+    console.warn(`Sheet read failed for ${range}:`, e.message);
+    return fallback;
+  }
+}
+
+async function syncAll() {
+  const status = document.getElementById('sync-status');
+  status.textContent = 'Syncing...';
+  status.className = 'sync-status';
+  try {
+    const [cfg, players, courses, scores, skins, birdies, teeTimes, matchups] = await Promise.all([
+      safeReadSheet('config!A:B'),
+      safeReadSheet('players!A:F'),
+      safeReadSheet('courses!A:AE'),
+      safeReadSheet('scores!A:J'),
+      safeReadSheet('skins!A:F'),
+      safeReadSheet('birdies_deuces!A:F'),
+      safeReadSheet('tee_times!A:I'),
+      safeReadSheet('matchups!A:F'),
+    ]);
+
+    state.config   = configToObject(cfg);
+    state.players  = rowsToObjects(players);
+    state.courses  = rowsToObjects(courses);
+    state.scores   = rowsToObjects(scores);
+    state.skins    = rowsToObjects(skins);
+    state.birdies  = rowsToObjects(birdies);
+    state.teeTimes = rowsToObjects(teeTimes);
+    state.matchups = rowsToObjects(matchups);
+    state.loaded   = true;
+
+    updateHeader();
+    populatePlayerSelect();
+    renderCurrentScreen();
+
+    // if score entry is open for a player/day, rebuild it with latest data
+    if (currentScreen === 'scores') {
+      const playerId = document.getElementById('score-player').value;
+      const day      = document.getElementById('score-day').value;
+      if (playerId && day) buildScorecard();
+    }
+
+    status.textContent = `Synced ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+    status.className = 'sync-status ok';
+    showToast('✓ Data refreshed');
+  } catch (e) {
+    console.error(e);
+    status.textContent = 'Sync failed — check API key';
+    status.className = 'sync-status err';
+    showToast('⚠️ Could not reach Google Sheets');
+  }
+}
+
+// ── HEADER ────────────────────────────────────────────────────────
+function updateHeader() {
+  const name = state.config.trip_name || 'Tiki Golf';
+  const year = state.config.year || new Date().getFullYear();
+  document.getElementById('app-title').textContent = name;
+  document.getElementById('app-subtitle').textContent =
+    `${state.players.filter(p => p.active !== 'false').length} players · ${year}`;
+  document.title = name;
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────
+let currentScreen = 'courses';
+
+function showScreen(name, tabEl) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+  tabEl.classList.add('active');
+  currentScreen = name;
+
+  // reset course detail when going back to courses
+  if (name === 'courses') {
+    document.getElementById('courses-list-view').style.display = '';
+    document.getElementById('courses-detail-view').style.display = 'none';
+  }
+
+  // always re-render from current state on tab switch
+  // so Skins/Standings reflect latest scores without a full sync
+  renderCurrentScreen();
+}
+
+function renderCurrentScreen() {
+  if (!state.loaded) return;
+  if (currentScreen === 'courses')     renderCourses();
+  if (currentScreen === 'leaderboard') renderLeaderboard();
+  if (currentScreen === 'ryder')       renderRyder();
+  if (currentScreen === 'skins')       renderSkins();
+}
+
+// ── COURSES ───────────────────────────────────────────────────────
+function renderCourses() {
+  const el = document.getElementById('courses-list-view');
+  if (!state.courses.length) {
+    el.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l9-9 9 9M5 10v9h14v-9"/></svg><p>No courses added yet.<br>Add courses to your Google Sheet.</p></div>`;
+    return;
+  }
+
+  const grid = state.courses.map((c, i) => {
+    const imgHtml = c.card_image_url
+      ? `<img src="${c.card_image_url}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+         <div class="course-img-placeholder" style="display:none;">
+           <svg viewBox="0 0 24 24"><path d="M12 2C8 2 4 5.6 4 10c0 5.2 8 12 8 12s8-6.8 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z"/></svg>
+         </div>`
+      : `<div class="course-img-placeholder">
+           <svg viewBox="0 0 24 24"><path d="M12 2C8 2 4 5.6 4 10c0 5.2 8 12 8 12s8-6.8 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z"/></svg>
+         </div>`;
+    return `
+      <div class="course-card" onclick="showCourseDetail(${i})">
+        ${imgHtml}
+        <div class="course-info">
+          <div class="course-name">${c.name || 'Course ' + (i+1)}</div>
+          <div class="course-date">${formatDate(c.date)}</div>
+          <div class="course-format">${formatLabel(c.format)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = `<div class="course-grid">${grid}</div>`;
+}
+
+function showCourseDetail(idx) {
+  const c = state.courses[idx];
+
+  // par totals still needed for the info row
+  let frontPar = 0, backPar = 0;
+  for (let h = 1; h <= 18; h++) {
+    const p = parseInt(c[`h${h}_par`]) || 4;
+    if (h <= 9) frontPar += p; else backPar += p;
+  }
+  const total = frontPar + backPar;
+
+  // ── Hero image (card_image_url) or gradient fallback
+  const heroHtml = c.card_image_url
+    ? `<img src="${c.card_image_url}"
+           id="course-hero-img"
+           style="width:100%;aspect-ratio:16/7;object-fit:cover;border-radius:12px;margin-bottom:16px;display:block;"
+           onerror="this.style.display='none';document.getElementById('course-hero-fallback').style.display='flex';" />
+       <div id="course-hero-fallback" class="detail-hero" style="margin-bottom:16px;display:none;">
+         <svg width="60" height="60" viewBox="0 0 24 24" fill="rgba(255,255,255,0.2)">
+           <path d="M12 2C8 2 4 5.6 4 10c0 5.2 8 12 8 12s8-6.8 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z"/>
+         </svg>
+       </div>`
+    : `<div class="detail-hero" style="margin-bottom:16px;">
+         <svg width="60" height="60" viewBox="0 0 24 24" fill="rgba(255,255,255,0.2)">
+           <path d="M12 2C8 2 4 5.6 4 10c0 5.2 8 12 8 12s8-6.8 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z"/>
+         </svg>
+       </div>`;
+
+  // ── Maps link
+  const mapsUrl = c.address
+    ? `https://maps.apple.com/?q=${encodeURIComponent(c.address)}`
+    : null;
+  const addressHtml = c.address
+    ? `<a href="${mapsUrl}" target="_blank" style="
+        display:flex;align-items:center;gap:6px;
+        color:var(--gold);text-decoration:none;font-weight:500;font-size:14px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+          <circle cx="12" cy="9" r="2.5"/>
+        </svg>
+        ${c.address}
+      </a>`
+    : '<span style="color:var(--gray-mid)">—</span>';
+
+  // ── Scorecard image or "not uploaded" placeholder
+  const scorecardHtml = c.scorecard_image_url
+    ? `<a href="${c.scorecard_image_url}" target="_blank" style="display:block;margin-top:8px;">
+         <img src="${c.scorecard_image_url}"
+              id="scorecard-img"
+              style="width:100%;border-radius:10px;display:block;box-shadow:0 2px 8px rgba(0,0,0,0.12);"
+              onerror="this.style.display='none';document.getElementById('scorecard-img-err').style.display='block';" />
+         <div id="scorecard-img-err" style="display:none;padding:20px;text-align:center;font-size:13px;
+              color:var(--gray-mid);background:var(--white);border-radius:10px;">
+           Image failed to load — check the URL in your sheet
+         </div>
+         <div style="font-size:11px;color:var(--gray-mid);text-align:center;margin-top:6px;">Tap to open full size</div>
+       </a>`
+    : `<div style="padding:20px;text-align:center;font-size:13px;color:var(--gray-mid);
+                   background:var(--white);border-radius:10px;margin-top:8px;">
+         No scorecard image yet — add a URL to the <em>scorecard_image_url</em> column in your sheet
+       </div>`;
+
+  // ── Tee times for this course
+  const courseTees = state.teeTimes
+    .filter(t => String(t.course_id) === String(c.id))
+    .sort((a, b) => a.tee_time.localeCompare(b.tee_time));
+
+  const teeTimeRows = courseTees.length
+    ? courseTees.map((t, tIdx) => {
+        const playerIds = [t.player1_id, t.player2_id, t.player3_id, t.player4_id].filter(Boolean);
+        const names = playerIds.map(id => {
+          const p = state.players.find(p => String(p.id) === String(id));
+          return p ? p.name.split(' ')[0] + ' ' + (p.name.split(' ')[1]?.[0] || '') + '.' : '?';
+        });
+        const hole = t.starting_hole === '10' ? 'Hole 10' : 'Hole 1';
+        const teamDots = playerIds.map(id => {
+          const p = state.players.find(p => String(p.id) === String(id));
+          const color = p?.team?.toLowerCase() === 'red' ? 'var(--red)' : p?.team?.toLowerCase() === 'blue' ? 'var(--blue)' : 'var(--gray-mid)';
+          return `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};margin-right:2px;"></span>`;
+        }).join('');
+        const stateIdx = state.teeTimes.findIndex(x => x.id === t.id);
+        return `
+          <div class="tee-time-row">
+            <div class="tee-time-slot">
+              <div class="tee-time-clock">${t.tee_time}</div>
+              <div class="tee-time-hole">${hole}</div>
+            </div>
+            <div class="tee-time-players">
+              <div>${teamDots}</div>
+              <div class="tee-time-names">${names.join(', ')}</div>
+              ${t.notes ? `<div class="tee-time-note">${t.notes}</div>` : ''}
+            </div>
+            <div class="tee-time-actions">
+              <button class="tee-action-btn" title="Edit"
+                onclick="requireAdmin(() => openTeeTimeModal('${c.id}', ${idx}, ${stateIdx}))">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="tee-action-btn tee-delete-btn" title="Delete"
+                onclick="requireAdmin(() => confirmDeleteTeeTime(${stateIdx}, ${idx}))">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                  <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>`;
+      }).join('')
+    : `<div style="padding:14px;text-align:center;font-size:13px;color:var(--gray-mid);">No tee times added yet</div>`;
+
+  document.getElementById('courses-detail-view').innerHTML = `
+    <button class="back-btn" onclick="closeCourseDetail()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      Courses
+    </button>
+
+    ${heroHtml}
+
+    <div class="detail-title">${c.name || 'Course'}</div>
+    <div class="detail-subtitle">${formatDate(c.date)} · ${formatLabel(c.format)}</div>
+
+    <div class="detail-rows">
+      <div class="detail-row"><span class="label">Tees</span><span class="value">${c.tees || '—'}</span></div>
+      <div class="detail-row"><span class="label">Total Par</span><span class="value">${total}</span></div>
+      <div class="detail-row"><span class="label">Address</span><span class="value">${addressHtml}</span></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;margin-bottom:10px;">
+      <div class="section-label" style="margin:0;">Tee Times</div>
+      <button class="add-tee-btn" onclick="requireAdmin(() => openTeeTimeModal('${c.id}', ${idx}))">+ Add</button>
+    </div>
+    <div class="tee-times-list" id="tee-times-list-${idx}">
+      ${teeTimeRows}
+    </div>
+
+    <div class="section-label" style="margin-top:20px;">Scorecard</div>
+    ${scorecardHtml}
+  `;
+
+  document.getElementById('courses-list-view').style.display = 'none';
+  document.getElementById('courses-detail-view').style.display = '';
+}
+
+function closeCourseDetail() {
+  document.getElementById('courses-list-view').style.display = '';
+  document.getElementById('courses-detail-view').style.display = 'none';
+}
+
+// ── ADMIN PIN AUTH ────────────────────────────────────────────────
+let adminUnlocked = false;   // stays true for the session once correct PIN entered
+let pendingAdminAction = null;
+
+function requireAdmin(action) {
+  if (adminUnlocked) {
+    action();
+    return;
+  }
+  pendingAdminAction = action;
+  const modal = document.getElementById('pin-modal');
+  const input = document.getElementById('pin-input');
+  input.value = '';
+  input.classList.remove('shake');
+  modal.classList.add('active');
+  setTimeout(() => input.focus(), 100);
+}
+
+function submitPin() {
+  const input    = document.getElementById('pin-input');
+  const entered  = input.value;
+  const correct  = String(TIKI_CONFIG.ADMIN_PIN || CONFIG.ADMIN_PIN || '');
+
+  if (!correct) {
+    // no PIN set in config — warn and let through
+    showToast('⚠️ No ADMIN_PIN set in config.js');
+    closePinModal();
+    return;
+  }
+
+  if (entered === correct) {
+    adminUnlocked = true;
+    closePinModal();
+    if (pendingAdminAction) {
+      pendingAdminAction();
+      pendingAdminAction = null;
+    }
+  } else {
+    input.classList.remove('shake');
+    void input.offsetWidth; // force reflow to restart animation
+    input.classList.add('shake');
+    input.value = '';
+    setTimeout(() => input.focus(), 50);
+  }
+}
+
+function cancelPin() {
+  pendingAdminAction = null;
+  closePinModal();
+}
+
+function closePinModal() {
+  document.getElementById('pin-modal').classList.remove('active');
+}
+
+// ── TEE TIME MODAL ────────────────────────────────────────────────
+function openTeeTimeModal(courseId, courseIdx, editStateIdx = -1) {
+  const activePlayers = state.players
+    .filter(p => p.active !== 'false')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const playerOptions = `<option value="">— empty slot —</option>` +
+    activePlayers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+  const modal = document.getElementById('tee-time-modal');
+  modal.dataset.courseId    = courseId;
+  modal.dataset.courseIdx   = courseIdx;
+  modal.dataset.editStateIdx = editStateIdx;
+
+  ['ttm-p1','ttm-p2','ttm-p3','ttm-p4'].forEach(id => {
+    document.getElementById(id).innerHTML = playerOptions;
+  });
+
+  const isEdit = editStateIdx >= 0;
+  document.getElementById('ttm-modal-title').textContent = isEdit ? 'Edit Tee Time' : 'Add Tee Time';
+  document.getElementById('ttm-delete-btn').style.display = isEdit ? 'block' : 'none';
+
+  if (isEdit) {
+    const t = state.teeTimes[editStateIdx];
+    document.getElementById('ttm-time').value  = t.tee_time;
+    document.getElementById('ttm-hole').value  = t.starting_hole || '1';
+    document.getElementById('ttm-notes').value = t.notes || '';
+    document.getElementById('ttm-p1').value    = t.player1_id || '';
+    document.getElementById('ttm-p2').value    = t.player2_id || '';
+    document.getElementById('ttm-p3').value    = t.player3_id || '';
+    document.getElementById('ttm-p4').value    = t.player4_id || '';
+  } else {
+    document.getElementById('ttm-time').value  = '';
+    document.getElementById('ttm-hole').value  = '1';
+    document.getElementById('ttm-notes').value = '';
+    document.getElementById('ttm-p1').value    = '';
+    document.getElementById('ttm-p2').value    = '';
+    document.getElementById('ttm-p3').value    = '';
+    document.getElementById('ttm-p4').value    = '';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeTeeTimeModal() {
+  document.getElementById('tee-time-modal').style.display = 'none';
+}
+
+async function confirmDeleteTeeTime(stateIdx, courseIdx) {
+  const t = state.teeTimes[stateIdx];
+  if (!t) return;
+  if (!confirm(`Delete ${t.tee_time} tee time?`)) return;
+
+  const authorized = await ensureGoogleAccessForWrite();
+  if (!authorized) return;
+
+  try {
+    showToast('Deleting...');
+    await writeSheet(`tee_times!A${t._rowNum}:I${t._rowNum}`, [['','','','','','','','','']]);
+    state.teeTimes.splice(stateIdx, 1);
+    showCourseDetail(courseIdx);
+    showToast('✓ Tee time deleted');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Delete failed — check connection');
+  }
+}
+
+async function deleteTeeTime() {
+  const modal     = document.getElementById('tee-time-modal');
+  const stateIdx  = parseInt(modal.dataset.editStateIdx);
+  const courseIdx = parseInt(modal.dataset.courseIdx);
+  if (stateIdx < 0) return;
+
+  const t = state.teeTimes[stateIdx];
+  if (!t || !confirm(`Delete ${t.tee_time} tee time?`)) return;
+
+  const authorized = await ensureGoogleAccessForWrite();
+  if (!authorized) return;
+
+  try {
+    showToast('Deleting...');
+    await writeSheet(`tee_times!A${t._rowNum}:I${t._rowNum}`, [['','','','','','','','','']]);
+    state.teeTimes.splice(stateIdx, 1);
+    closeTeeTimeModal();
+    showCourseDetail(courseIdx);
+    showToast('✓ Tee time deleted');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Delete failed — check connection');
+  }
+}
+
+async function saveTeeTime() {
+  const modal      = document.getElementById('tee-time-modal');
+  const courseId   = modal.dataset.courseId;
+  const courseIdx  = parseInt(modal.dataset.courseIdx);
+  const editStateIdx = parseInt(modal.dataset.editStateIdx);
+  const isEdit     = editStateIdx >= 0;
+  const time       = document.getElementById('ttm-time').value;
+  const hole       = document.getElementById('ttm-hole').value;
+  const notes      = document.getElementById('ttm-notes').value;
+  const p1         = document.getElementById('ttm-p1').value;
+  const p2         = document.getElementById('ttm-p2').value;
+  const p3         = document.getElementById('ttm-p3').value;
+  const p4         = document.getElementById('ttm-p4').value;
+
+  if (!time) { showToast('Please enter a tee time'); return; }
+  if (!p1 && !p2 && !p3 && !p4) { showToast('Add at least one player'); return; }
+
+  const authorized = await ensureGoogleAccessForWrite();
+  if (!authorized) return;
+
+  try {
+    showToast('Saving...');
+
+    if (isEdit) {
+      const existing = state.teeTimes[editStateIdx];
+      const row = [existing.id, courseId, time, hole, p1, p2, p3, p4, notes];
+      await writeSheet(`tee_times!A${existing._rowNum}:I${existing._rowNum}`, [row]);
+      state.teeTimes[editStateIdx] = {
+        ...existing, tee_time: time, starting_hole: hole,
+        player1_id: p1, player2_id: p2, player3_id: p3, player4_id: p4, notes,
+      };
+    } else {
+      const safeTime = time.replace(':', '');
+      const id = `tt_${courseId}_${safeTime}`;
+      const row = [id, courseId, time, hole, p1, p2, p3, p4, notes];
+      await appendSheet('tee_times!A:I', [row]);
+      // _rowNum will be set on next sync; approximate it for now
+      state.teeTimes.push({
+        id, course_id: courseId, tee_time: time, starting_hole: hole,
+        player1_id: p1, player2_id: p2, player3_id: p3, player4_id: p4, notes,
+        _rowNum: state.teeTimes.length + 2,
+      });
+    }
+
+    closeTeeTimeModal();
+    showCourseDetail(courseIdx);
+    showToast(isEdit ? '✓ Tee time updated!' : '✓ Tee time saved!');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Save failed — check connection');
+  }
+}
+
+// ── SCORE ENTRY ───────────────────────────────────────────────────
+function populatePlayerSelect() {
+  const sel = document.getElementById('score-player');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select player...</option>';
+  state.players
+    .filter(p => p.active !== 'false')
+    .sort((a,b) => a.name.localeCompare(b.name))
+    .forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+  sel.value = current;
+}
+
+document.getElementById('score-player').addEventListener('change', buildScorecard);
+document.getElementById('score-day').addEventListener('change', buildScorecard);
+
+function buildScorecard() {
+  const playerId = document.getElementById('score-player').value;
+  const day      = document.getElementById('score-day').value;
+  const container = document.getElementById('scorecard-container');
+
+  if (!playerId || !day) {
+    container.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg><p>Select a player and day<br>to enter scores</p></div>`;
+    return;
+  }
+
+  const course = state.courses[parseInt(day) - 1];
+  if (!course) {
+    container.innerHTML = `<div class="empty"><p>No course set up for Day ${day}.<br>Add it to your Google Sheet.</p></div>`;
+    return;
+  }
+
+  // existing scores for this player/day
+  const existing = {};
+  state.scores
+    .filter(s => s.player_id === playerId && s.day === day)
+    .forEach(s => { existing[s.hole] = s.strokes; });
+
+  const holes = [];
+  let frontPar = 0, backPar = 0;
+  for (let h = 1; h <= 18; h++) {
+    const par = parseInt(course[`h${h}_par`]) || 4;
+    if (h <= 9) frontPar += par; else backPar += par;
+    holes.push({ h, par });
+  }
+
+  const holeRows = holes.map(({ h, par }) => {
+    const val = existing[h] !== undefined ? existing[h] : par;
+    const diff = parseInt(val) - par;
+    return `
+    <div class="hole-row" id="hole-row-${h}">
+      <div class="hole-num">${h}</div>
+      <div class="hole-par">Par ${par}</div>
+      <div class="score-ctrl">
+        <button class="score-btn minus" onclick="adjustScore(${h}, ${par}, -1)">−</button>
+        <input type="number" class="hole-input" id="hole-${h}"
+               min="1" max="12"
+               value="${val}"
+               oninput="onScoreInput(${h}, ${par}, this.value)" />
+        <button class="score-btn plus" onclick="adjustScore(${h}, ${par}, 1)">+</button>
+      </div>
+      <div class="hole-diff ${diffClass(diff)}" id="hole-diff-${h}">
+        ${diffLabel(diff)}
+      </div>
+    </div>
+    ${h === 9 ? `<div style="background:var(--gray-light);padding:8px 14px;font-size:12px;font-weight:600;color:var(--gray-dark);">FRONT 9 · Par ${frontPar}</div>` : ''}
+  `}).join('');
+
+  const totalPar = frontPar + backPar;
+
+  container.innerHTML = `
+    <div class="section-label">${course.name} · Day ${day}</div>
+    <div class="scorecard">
+      <div class="scorecard-header">
+        <div>Hole</div><div>Par</div><div style="text-align:center;">Score</div><div>+/-</div>
+      </div>
+      ${holeRows}
+      <div class="scorecard-footer">
+        <div></div>
+        <div>Total Par ${totalPar}</div>
+        <div id="score-total" style="text-align:center;">—</div>
+        <div id="score-total-diff">—</div>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveScores('${playerId}', '${day}')">Save Scorecard</button>
+  `;
+
+  updateScoreTotal(holes.map(h => h.par));
+}
+
+function adjustScore(hole, par, delta) {
+  const input = document.getElementById(`hole-${hole}`);
+  if (!input) return;
+  const current = parseInt(input.value) || par;
+  const next    = Math.max(1, Math.min(12, current + delta));
+  input.value   = next;
+  onScoreInput(hole, par, next);
+}
+
+function onScoreInput(hole, par, val) {
+  const diff = document.getElementById(`hole-diff-${hole}`);
+  if (val === '' || isNaN(val)) { diff.textContent = ''; diff.className = 'hole-diff'; return; }
+  const d = parseInt(val) - par;
+  diff.textContent = diffLabel(d);
+  diff.className   = 'hole-diff ' + diffClass(d);
+
+  const holes = [];
+  for (let h = 1; h <= 18; h++) {
+    const p = state.courses[parseInt(document.getElementById('score-day').value) - 1];
+    holes.push(parseInt(p?.[`h${h}_par`]) || 4);
+  }
+  updateScoreTotal(holes);
+}
+
+function updateScoreTotal(pars) {
+  let total = 0, parTotal = 0, count = 0;
+  for (let h = 1; h <= 18; h++) {
+    const v = document.getElementById(`hole-${h}`)?.value;
+    if (v && !isNaN(v)) { total += parseInt(v); count++; }
+    parTotal += pars[h-1] || 4;
+  }
+  const totalEl = document.getElementById('score-total');
+  const diffEl  = document.getElementById('score-total-diff');
+  if (totalEl) totalEl.textContent = count > 0 ? total : '—';
+  if (diffEl)  diffEl.textContent  = count > 0 ? (total - parTotal >= 0 ? '+' : '') + (total - parTotal) : '—';
+}
+
+function diffLabel(d) {
+  if (d <= -2) return 'Eagle';
+  if (d === -1) return 'Birdie';
+  if (d === 0)  return 'Par';
+  if (d === 1)  return 'Bogey';
+  if (d === 2)  return 'Double';
+  return `+${d}`;
+}
+function diffClass(d) {
+  if (d <= -2) return 'eagle';
+  if (d === -1) return 'birdie';
+  if (d === 0)  return 'par';
+  if (d === 1)  return 'bogey';
+  return 'double';
+}
+
+async function saveScores(playerId, day) {
+  const course = state.courses[parseInt(day) - 1];
+  if (!course) return;
+
+  const newRows = [];
+  let hasSomething = false;
+
+  for (let h = 1; h <= 18; h++) {
+    const val = document.getElementById(`hole-${h}`)?.value;
+    if (!val || isNaN(val)) continue;
+    hasSomething = true;
+    const par     = parseInt(course[`h${h}_par`]) || 4;
+    const strokes = parseInt(val);
+    const isBirdie = strokes <= par - 1 ? 'TRUE' : 'FALSE'; // includes eagles
+    const isDeuce  = strokes === 2       ? 'TRUE' : 'FALSE';
+    const id = `${playerId}_d${day}_h${h}`;
+    newRows.push([id, playerId, course.id, day, h, strokes, par, isBirdie, isDeuce, new Date().toISOString()]);
+  }
+
+  if (!hasSomething) { showToast('No scores entered'); return; }
+
+  const hasWriteAccess = await ensureGoogleAccessForWrite();
+  if (!hasWriteAccess) return;
+
+  try {
+    showToast('Saving...');
+
+    // ── Step 1: Read all current scores rows to find which to overwrite ──
+    const allRows = await readSheet('scores!A:J');
+    const header  = allRows[0] || [];
+    const dataRows = allRows.slice(1);
+
+    // build a map of row index → new value for rows belonging to this player/day
+    // row index in sheet = dataRows index + 2 (1-based + header)
+    const rowUpdates = {}; // sheetRowNum → newRowData
+    const coveredHoles = new Set();
+
+    newRows.forEach(nr => {
+      const hole = String(nr[4]);
+      const existingIdx = dataRows.findIndex(r =>
+        r[1] === String(playerId) &&
+        String(r[3]) === String(day) &&
+        String(r[4]) === hole
+      );
+      if (existingIdx >= 0) {
+        rowUpdates[existingIdx + 2] = nr; // +2 = 1-based + header row
+        coveredHoles.add(hole);
+      }
+    });
+
+    // ── Step 2: Write updates for existing rows ──
+    const updatePromises = Object.entries(rowUpdates).map(([rowNum, rowData]) =>
+      writeSheet(`scores!A${rowNum}:J${rowNum}`, [rowData])
+    );
+
+    // ── Step 3: Append any holes that had no existing row ──
+    const toAppend = newRows.filter(nr => !coveredHoles.has(String(nr[4])));
+
+    await Promise.all([
+      ...updatePromises,
+      toAppend.length ? appendSheet('scores!A:J', toAppend) : Promise.resolve(),
+    ]);
+
+    // ── Step 4: Update local state so everything re-renders correctly ──
+    newRows.forEach(r => {
+      const obj = {
+        id: r[0], player_id: String(r[1]), course_id: r[2],
+        day: String(r[3]), hole: String(r[4]), strokes: String(r[5]),
+        par: String(r[6]), is_birdie: r[7], is_deuce: r[8],
+      };
+      const existingIdx = state.scores.findIndex(s =>
+        String(s.player_id) === String(playerId) &&
+        String(s.day)       === String(day) &&
+        String(s.hole)      === String(r[4])
+      );
+      if (existingIdx >= 0) state.scores[existingIdx] = obj;
+      else state.scores.push(obj);
+    });
+
+    showToast('✓ Scores saved!');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Save failed — check connection');
+  }
+}
+
+// ── LEADERBOARD ───────────────────────────────────────────────────
+let lbDay = 'overall';
+
+function setLbDay(day, el) {
+  lbDay = day;
+  document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderLeaderboard();
+}
+
+// compute per-player totals across all days
+function computePlayerTotals() {
+  const activePlayers = state.players.filter(p => p.active !== 'false');
+  return activePlayers.map(p => {
+    const days = { '1': 0, '2': 0, '3': 0, '4': 0 };
+    const counts = { '1': 0, '2': 0, '3': 0, '4': 0 };
+    state.scores
+      .filter(s => String(s.player_id) === String(p.id))
+      .forEach(s => {
+        if (days[s.day] !== undefined) {
+          days[s.day] += parseInt(s.strokes) || 0;
+          counts[s.day]++;
+        }
+      });
+    const thruDay3   = (days['1'] || 0) + (days['2'] || 0) + (days['3'] || 0);
+    const total      = thruDay3 + (days['4'] || 0);
+    const daysPlayed = Object.values(counts).filter(c => c > 0).length;
+    const hasDay3    = counts['3'] > 0;
+    return { ...p, days, counts, total, thruDay3, daysPlayed, hasDay3 };
+  });
+}
+
+// assign locked flights based on Day 1-3 standings only
+function assignFlights(playerTotals, numFlights) {
+  const day3Done = playerTotals.some(p => p.hasDay3);
+  if (!day3Done) return null; // flights not locked yet
+
+  // sort by Days 1-3 total only to determine flight placement
+  const sortedForFlights = [...playerTotals]
+    .filter(p => p.thruDay3 > 0)
+    .sort((a, b) => a.thruDay3 - b.thruDay3);
+
+  const flightSize = Math.ceil(sortedForFlights.length / numFlights);
+  const flightMap = {};
+  sortedForFlights.forEach((p, i) => {
+    flightMap[p.id] = Math.floor(i / flightSize); // 0 = Flight A, 1 = Flight B, etc.
+  });
+  return flightMap;
+}
+
+function renderLeaderboard() {
+  const el = document.getElementById('leaderboard-content');
+  const playerTotals = computePlayerTotals();
+
+  if (!playerTotals.length) {
+    el.innerHTML = `<div class="empty"><p>No players found in your sheet.</p></div>`;
+    return;
+  }
+
+  // how many flights? read from config or default to 2
+  const numFlights = parseInt(state.config.num_flights) || 2;
+  const flightMap  = assignFlights(playerTotals, numFlights);
+  const flightsDetermined = flightMap !== null;
+  const flightLabels = ['A','B','C','D'];
+  const flightColors = ['flight-a','flight-b','flight-c','flight-d'];
+
+  // for a single day view
+  if (lbDay !== 'overall') {
+    const sorted = [...playerTotals].sort((a,b) => {
+      const as = a.days[lbDay], bs = b.days[lbDay];
+      if (!as && !bs) return 0;
+      if (!as) return 1;
+      if (!bs) return -1;
+      return as - bs;
+    });
+
+    const rows = sorted.map((p, i) => {
+      const score = p.days[lbDay];
+      const hasScore = score > 0;
+      const teamColor = teamDotColor(p.team);
+      const flight = flightsDetermined && flightMap[p.id] !== undefined
+        ? `<span class="flight-badge ${flightColors[flightMap[p.id]]}">Flt ${flightLabels[flightMap[p.id]]}</span>`
+        : '';
+      return `
+        <div class="lb-row ${i < 3 && hasScore ? 'highlight' : ''}">
+          <div class="lb-pos ${i < 3 && hasScore ? 'top' : ''}">${hasScore ? i+1 : '—'}</div>
+          <div class="lb-name">
+            <span class="team-dot" style="background:${teamColor}"></span>
+            ${p.name}${flight}
+          </div>
+          <div class="lb-score">${hasScore ? score : '—'}</div>
+          <div class="lb-total"></div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="leaderboard-table">
+        <div class="lb-header"><div>#</div><div>Player</div><div>Score</div><div></div></div>
+        ${rows || '<div style="padding:20px;text-align:center;color:var(--gray-mid);font-size:13px;">No scores yet for this day</div>'}
+      </div>`;
+    return;
+  }
+
+  // ── OVERALL VIEW ──────────────────────────────────────────────
+  if (!flightsDetermined) {
+    // Pre-flight: one unified leaderboard, ranked by cumulative total
+    const sorted = [...playerTotals].sort((a,b) => {
+      if (!a.daysPlayed && !b.daysPlayed) return 0;
+      if (!a.daysPlayed) return 1;
+      if (!b.daysPlayed) return -1;
+      return a.total - b.total;
+    });
+
+    const rows = sorted.map((p, i) => {
+      const hasScore = p.daysPlayed > 0;
+      const teamColor = teamDotColor(p.team);
+      const dayScores = [1,2,3,4].map(d =>
+        p.days[d] > 0 ? `<span style="font-size:11px;color:var(--gray-mid);">D${d}:${p.days[d]}</span>` : ''
+      ).filter(Boolean).join(' ');
+      return `
+        <div class="lb-row ${i < 3 && hasScore ? 'highlight' : ''}">
+          <div class="lb-pos ${i < 3 && hasScore ? 'top' : ''}">${hasScore ? i+1 : '—'}</div>
+          <div class="lb-name">
+            <span class="team-dot" style="background:${teamColor}"></span>
+            <div>
+              <div>${p.name}</div>
+              <div style="margin-top:2px;">${dayScores}</div>
+            </div>
+          </div>
+          <div class="lb-score">${hasScore ? p.total : '—'}</div>
+          <div class="lb-total">${hasScore ? p.daysPlayed + 'd' : ''}</div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div style="font-size:12px;color:var(--gray-mid);margin-bottom:10px;text-align:center;">
+        Flights lock after Day 3 scores are posted
+      </div>
+      <div class="leaderboard-table">
+        <div class="lb-header"><div>#</div><div>Player</div><div>Total</div><div>Days</div></div>
+        ${rows}
+      </div>`;
+    return;
+  }
+
+  // ── POST-DAY-3: Flight-split leaderboard ──────────────────────
+  // Group players into flights — rank within each flight by TOTAL (Days 1-4)
+  const flightGroups = {};
+  playerTotals.forEach(p => {
+    const f = flightMap[p.id] ?? numFlights - 1; // unplaced go to last flight
+    if (!flightGroups[f]) flightGroups[f] = [];
+    flightGroups[f].push(p);
+  });
+
+  const flightBlocks = Object.entries(flightGroups)
+    .sort(([a],[b]) => a - b)
+    .map(([fIdx, players]) => {
+      const sorted = [...players].sort((a,b) => {
+        if (!a.daysPlayed && !b.daysPlayed) return 0;
+        if (!a.daysPlayed) return 1;
+        if (!b.daysPlayed) return -1;
+        return a.total - b.total;
+      });
+
+      const rows = sorted.map((p, i) => {
+        const hasScore = p.daysPlayed > 0;
+        const teamColor = teamDotColor(p.team);
+        const dayScores = [1,2,3,4].map(d =>
+          p.days[d] > 0 ? `<span style="font-size:10px;color:var(--gray-mid);">D${d}:${p.days[d]}</span>` : ''
+        ).filter(Boolean).join(' ');
+        return `
+          <div class="lb-row ${i < 3 && hasScore ? 'highlight' : ''}">
+            <div class="lb-pos ${i < 3 && hasScore ? 'top' : ''}">${hasScore ? i+1 : '—'}</div>
+            <div class="lb-name">
+              <span class="team-dot" style="background:${teamColor}"></span>
+              <div>
+                <div>${p.name}</div>
+                <div style="margin-top:2px;">${dayScores}</div>
+              </div>
+            </div>
+            <div class="lb-score">${hasScore ? p.total : '—'}</div>
+            <div class="lb-total">${p.days['4'] > 0 ? p.days['4'] : ''}</div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:8px;">
+          <div class="section-label" style="margin:0;">
+            Flight ${flightLabels[fIdx]}
+          </div>
+          <span style="font-size:11px;color:var(--gray-mid);">Locked after Day 3</span>
+        </div>
+        <div class="leaderboard-table">
+          <div class="lb-header"><div>#</div><div>Player</div><div>Total</div><div>Day 4</div></div>
+          ${rows}
+        </div>`;
+    }).join('');
+
+  el.innerHTML = flightBlocks;
+}
+
+function teamDotColor(team) {
+  if (team?.toLowerCase() === 'red')  return 'var(--red)';
+  if (team?.toLowerCase() === 'blue') return 'var(--blue)';
+  return 'var(--gray-mid)';
+}
+
+// ── RYDER CUP ────────────────────────────────────────────────────
+function renderRyder() {
+  const el = document.getElementById('ryder-content');
+  const t1 = state.config.team1_name || 'Team Red';
+  const t2 = state.config.team2_name || 'Team Blue';
+
+  // tally points — one point per match won, 0.5 each for halved
+  let redPts = 0, bluePts = 0;
+  state.matchups.forEach(m => {
+    if (m.winner === 'red')  redPts  += parseFloat(m.points) || 1;
+    if (m.winner === 'blue') bluePts += parseFloat(m.points) || 1;
+    if (m.winner === 'half') { redPts += 0.5; bluePts += 0.5; }
+  });
+
+  // build day cards — derive foursomes from tee_times, overlay saved matchup results
+  const dayCards = [1,2,3,4].map(d => {
+    const format = state.courses[d-1] ? formatLabel(state.courses[d-1].format) : `Day ${d}`;
+    const courseName = state.courses[d-1]?.name || `Day ${d}`;
+
+    // get foursomes for this day from tee_times
+    const dayTees = state.teeTimes
+      .filter(t => {
+        const course = state.courses[d-1];
+        return course && String(t.course_id) === String(course.id);
+      })
+      .sort((a,b) => a.tee_time.localeCompare(b.tee_time));
+
+    const matchRows = dayTees.length ? dayTees.map((t, i) => {
+      const playerIds = [t.player1_id, t.player2_id, t.player3_id, t.player4_id].filter(Boolean);
+      const redPlayers  = playerIds.filter(id => state.players.find(p => String(p.id) === String(id))?.team?.toLowerCase() === 'red');
+      const bluePlayers = playerIds.filter(id => state.players.find(p => String(p.id) === String(id))?.team?.toLowerCase() === 'blue');
+
+      const redNames  = redPlayers.map(id => state.players.find(p => String(p.id) === String(id))?.name?.split(' ')[0] || '?').join(' & ');
+      const blueNames = bluePlayers.map(id => state.players.find(p => String(p.id) === String(id))?.name?.split(' ')[0] || '?').join(' & ');
+
+      // find saved result for this tee time
+      const matchId = `match_d${d}_${t.id}`;
+      const saved = state.matchups.find(m => m.id === matchId);
+      const winner = saved?.winner || '';
+
+      return `
+        <div class="ryder-match-row">
+          <div class="ryder-match-teams">
+            <span class="ryder-team-name red-name">${redNames || '—'}</span>
+            <span class="ryder-vs">vs</span>
+            <span class="ryder-team-name blue-name">${blueNames || '—'}</span>
+          </div>
+          <div class="ryder-match-time">${t.tee_time} · Hole ${t.starting_hole || 1}</div>
+          <div class="ryder-result-btns">
+            <button class="ryder-btn ${winner === 'red' ? 'active-red' : ''}"
+                    onclick="setMatchResult('${matchId}', ${d}, '${t.id}', 'red')">
+              ${t1.replace('Team ','')} Win
+            </button>
+            <button class="ryder-btn ${winner === 'half' ? 'active-half' : ''}"
+                    onclick="setMatchResult('${matchId}', ${d}, '${t.id}', 'half')">
+              Halved
+            </button>
+            <button class="ryder-btn ${winner === 'blue' ? 'active-blue' : ''}"
+                    onclick="setMatchResult('${matchId}', ${d}, '${t.id}', 'blue')">
+              ${t2.replace('Team ','')} Win
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('') : `
+      <div style="font-size:13px;color:var(--gray-mid);text-align:center;padding:12px 0;">
+        Add tee times on the Courses tab first
+      </div>`;
+
+    return `
+      <div class="match-card">
+        <div class="match-day-label">Day ${d} · ${courseName} · ${format}</div>
+        ${matchRows}
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="ryder-header">
+      <div class="team-score-block">
+        <div class="team-name">${t1}</div>
+        <div class="team-pts red">${redPts % 1 === 0 ? redPts : redPts.toFixed(1)}</div>
+      </div>
+      <div class="vs-label">VS</div>
+      <div class="team-score-block">
+        <div class="team-name">${t2}</div>
+        <div class="team-pts blue">${bluePts % 1 === 0 ? bluePts : bluePts.toFixed(1)}</div>
+      </div>
+    </div>
+    ${dayCards}
+  `;
+}
+
+async function setMatchResult(matchId, day, teeTimeId, winner) {
+  const authorized = await ensureGoogleAccessForWrite();
+  if (!authorized) return;
+
+  const course = state.courses[day - 1];
+  const points = winner === 'half' ? '0.5' : '1';
+  const row = [matchId, String(day), teeTimeId, course?.id || '', winner, points];
+
+  try {
+    // check if already exists in state
+    const existingIdx = state.matchups.findIndex(m => m.id === matchId);
+
+    if (existingIdx >= 0) {
+      // update existing row in sheet — find its row number
+      const sheetRow = existingIdx + 2; // +2 for header row
+      await writeSheet(`matchups!A${sheetRow}:F${sheetRow}`, [row]);
+      state.matchups[existingIdx] = { id: matchId, day: String(day), tee_time_id: teeTimeId, course_id: course?.id || '', winner, points };
+    } else {
+      await appendSheet('matchups!A:F', [row]);
+      state.matchups.push({ id: matchId, day: String(day), tee_time_id: teeTimeId, course_id: course?.id || '', winner, points });
+    }
+
+    renderRyder();
+    showToast(winner === 'red' ? '🔴 Red wins the match!' : winner === 'blue' ? '🔵 Blue wins the match!' : '🤝 Match halved!');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Save failed — check connection');
+  }
+}
+
+// ── SKINS ────────────────────────────────────────────────────────
+function renderSkins() {
+  const el = document.getElementById('skins-content');
+
+  const pot      = parseFloat(state.config.skins_pot || state.config['skins_pot']) || 0;
+  const bdPot    = parseFloat(state.config.birdies_deuces_pot || state.config['birdies_deuces_pot']) || 0;
+  const numRounds = parseInt(state.config.num_rounds) || 4;
+  const dailyPot  = pot / numRounds; // each day gets an equal share
+
+  // ── SKINS: lowest unique score per hole, resets each day ──
+  // No carry logic — tied holes simply produce no skin winner
+  const derivedSkins = [];
+  state.courses.forEach((course, dayIdx) => {
+    const day = String(dayIdx + 1);
+
+    for (let h = 1; h <= 18; h++) {
+      const holeScores = state.scores
+        .filter(s => String(s.day) === day && String(s.hole) === String(h))
+        .map(s => ({ ...s, n: parseInt(s.strokes) }))
+        .filter(s => !isNaN(s.n));
+
+      if (!holeScores.length) continue;
+
+      const par      = parseInt(course[`h${h}_par`]) || 4;
+      const low      = Math.min(...holeScores.map(s => s.n));
+      const winners  = holeScores.filter(s => s.n === low);
+      const skinWon  = winners.length === 1;
+      const skinWinnerId = skinWon ? winners[0].player_id : null;
+
+      // collect every player who had a birdie/eagle/deuce on this hole
+      const events = holeScores
+        .filter(s => s.n <= par - 1 || s.n === 2)
+        .map(s => {
+          const player = state.players.find(p => String(p.id) === String(s.player_id));
+          return {
+            playerId: s.player_id,
+            name:     player?.name || '?',
+            score:    s.n,
+            isSkin:   skinWon && String(s.player_id) === String(skinWinnerId),
+            isBirdie: s.n === par - 1,
+            isEagle:  s.n <= par - 2,
+            isDeuce:  s.n === 2,
+          };
+        });
+
+      // ensure skin winner always appears even if no birdie/deuce
+      if (skinWon) {
+        const alreadyIn = events.some(e => String(e.playerId) === String(skinWinnerId));
+        if (!alreadyIn) {
+          const player = state.players.find(p => String(p.id) === String(skinWinnerId));
+          events.unshift({
+            playerId: skinWinnerId,
+            name:     player?.name || '?',
+            score:    low,
+            isSkin:   true,
+            isBirdie: low === par - 1,
+            isEagle:  low <= par - 2,
+            isDeuce:  low === 2,
+          });
+        }
+      }
+
+      // only record holes where something notable happened
+      if (events.length === 0 && !skinWon) continue;
+
+      derivedSkins.push({
+        day, hole: h, par,
+        tied: !skinWon && winners.length > 1,
+        courseName: course.name || `Day ${day}`,
+        events,
+      });
+    }
+  });
+
+  // group by day
+  const byDay = {};
+  derivedSkins.forEach(s => {
+    if (!byDay[s.day]) byDay[s.day] = [];
+    byDay[s.day].push(s);
+  });
+
+  // count skins per player per day for per-day payouts
+  const skinsByPlayerByDay = {}; // { day: { playerName: count } }
+  derivedSkins.filter(s => !s.tied && s.events).forEach(s => {
+    const skinWinner = s.events.find(e => e.isSkin);
+    if (!skinWinner) return;
+    const name = skinWinner.name;
+    if (!skinsByPlayerByDay[s.day]) skinsByPlayerByDay[s.day] = {};
+    if (!skinsByPlayerByDay[s.day][name]) skinsByPlayerByDay[s.day][name] = 0;
+    skinsByPlayerByDay[s.day][name]++;
+  });
+
+  // determine "today's" day based on which course date matches today
+  const today = new Date().toDateString();
+  const todayDayIdx = state.courses.findIndex(c => {
+    if (!c.date) return false;
+    return new Date(c.date).toDateString() === today;
+  });
+  // default: today's day expanded; if no match found, expand day 1
+  const defaultOpenDay = todayDayIdx >= 0 ? String(todayDayIdx + 1) : '1';
+
+  const skinRows = Object.entries(byDay).map(([day, skins]) => {
+    const isOpen   = day === defaultOpenDay;
+    const wonCount = skins.filter(s => !s.tied).length;
+    const dayPot   = dailyPot;
+
+    // per-day payout rows — payout = player's skins / total skins × daily pot
+    const dayWinners = skinsByPlayerByDay[day] || {};
+    const dayPayoutRows = Object.entries(dayWinners)
+      .sort((a,b) => b[1] - a[1])
+      .map(([name, count]) => {
+        const perSkin = Math.floor(dayPot / wonCount);
+        const payout  = perSkin * count;
+        return `
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:8px 14px;border-bottom:1px solid var(--gray-light);font-size:13px;">
+            <span style="font-weight:500;">${name}</span>
+            <span style="color:var(--gray-mid);">${count} skin${count!==1?'s':''}</span>
+            <span style="font-weight:700;color:var(--green-mid);">$${payout}</span>
+          </div>`;
+      }).join('');
+
+    const tableRows = skins.filter(s => !s.tied).map(s =>
+      s.events.map((e, i) => `
+        <div class="skin-event-row">
+          <div class="skin-event-hole">${i === 0 ? s.hole : ''}</div>
+          <div class="skin-event-player">${e.name}</div>
+          <div class="skin-event-score">${e.score}</div>
+          <div class="skin-event-icon">${e.isSkin   ? '🏆' : ''}</div>
+          <div class="skin-event-icon">${e.isEagle  ? '🦅' : e.isBirdie ? '🐦' : ''}</div>
+          <div class="skin-event-icon">${e.isDeuce  ? '⭐' : ''}</div>
+        </div>`).join('')
+    ).join('');
+
+    return `
+      <div class="collapsible-day" id="skins-day-${day}">
+        <div class="collapsible-header" onclick="toggleSkinsDay('${day}')">
+          <div>
+            <span class="collapsible-title">${skins[0]?.courseName || 'Day ' + day}</span>
+            <span class="collapsible-meta">
+              $${dayPot.toFixed(0)} pot · ${wonCount} skin${wonCount!==1?'s':''} won · $${Math.floor(dayPot / wonCount)}/skin
+            </span>
+          </div>
+          <span class="collapsible-chevron ${isOpen ? 'open' : ''}" id="chevron-${day}">▾</span>
+        </div>
+        <div class="collapsible-body ${isOpen ? 'open' : ''}" id="skins-body-${day}">
+          <div class="skin-event-table">
+            <div class="skin-event-header">
+              <div>Hole</div><div>Player</div><div>Score</div>
+              <div>🏆</div><div>🐦</div><div>⭐</div>
+            </div>
+            ${tableRows || '<div style="padding:14px;text-align:center;font-size:13px;color:var(--gray-mid);">No skins won yet</div>'}
+          </div>
+          ${dayPayoutRows ? `
+            <div style="background:var(--gray-light);padding:8px 14px;font-size:11px;font-weight:600;
+                        color:var(--gray-dark);text-transform:uppercase;letter-spacing:0.5px;">
+              Day Payout
+            </div>
+            ${dayPayoutRows}` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  // ── BIRDIES & DEUCES ──
+  // Derive directly from strokes vs par — don't trust stored is_birdie flag
+  // since old saves may have flagged eagles incorrectly
+  const bdByPlayer = {};
+  state.scores.forEach(s => {
+    const strokes = parseInt(s.strokes);
+    const par     = parseInt(s.par);
+    if (isNaN(strokes) || isNaN(par)) return;
+
+    const isBirdie = strokes <= par - 1; // birdie or better (includes eagles)
+    const isDeuce  = strokes === 2;
+
+    if (!isBirdie && !isDeuce) return;
+    if (!bdByPlayer[s.player_id]) bdByPlayer[s.player_id] = { birdies: 0, deuces: 0 };
+    if (isBirdie) bdByPlayer[s.player_id].birdies++;
+    if (isDeuce)  bdByPlayer[s.player_id].deuces++;
+  });
+
+  // each birdie = 1 share, each deuce = 2 shares
+  const bdTotalShares = Object.values(bdByPlayer).reduce((a,b) => a + b.birdies + b.deuces * 2, 0);
+  const bdShareValue  = bdTotalShares > 0 ? bdPot / bdTotalShares : 0;
+
+  const bdRows = Object.entries(bdByPlayer)
+    .sort((a,b) => (b[1].birdies + b[1].deuces*2) - (a[1].birdies + a[1].deuces*2))
+    .map(([id, counts]) => {
+      const name    = state.players.find(p => String(p.id) === String(id))?.name || id;
+      const shares  = counts.birdies + counts.deuces * 2;
+      const payout  = Math.floor(shares * bdShareValue);
+      return `
+        <div class="skin-row">
+          <div style="font-weight:500;">${name}</div>
+          <div class="skin-score" style="color:#2e7d32">🐦 ${counts.birdies}</div>
+          <div class="skin-score" style="color:var(--gold)">⭐ ${counts.deuces}</div>
+          <div class="skin-score" style="color:var(--green-mid);font-weight:700;">$${payout}</div>
+        </div>`;
+    }).join('') || `<div style="padding:16px;text-align:center;font-size:13px;color:var(--gray-mid);">No birdies or deuces yet</div>`;
+
+  el.innerHTML = `
+    <div class="skins-summary">
+      <div>
+        <div class="pot-label">Skins Pot</div>
+        <div class="pot-amount">$${pot}</div>
+        <div style="font-size:11px;color:var(--gray-mid);margin-top:2px;">$${dailyPot.toFixed(0)}/day × ${numRounds} rounds</div>
+      </div>
+      <div style="text-align:right">
+        <div class="pot-label">Birdies & Deuces</div>
+        <div class="pot-amount">$${bdPot}</div>
+        <div style="font-size:11px;color:var(--gray-mid);margin-top:2px;">Birdie = 1 share · Deuce = 2 shares</div>
+      </div>
+    </div>
+
+    <div class="section-label">Skins Results</div>
+    ${skinRows || `<div class="empty"><p>No scores entered yet.<br>Skins are calculated automatically.</p></div>`}
+
+    <div class="section-label" style="margin-top:20px;">Birdies & Deuces</div>
+    <div class="skins-table">
+      <div class="skin-row" style="background:var(--green-dark);color:var(--gold);font-size:11px;font-weight:600;">
+        <div>Player</div><div>Birdies</div><div>Deuces</div><div>Est. Payout</div>
+      </div>
+      ${bdRows}
+    </div>
+  `;
+}
+
+function toggleSkinsDay(day) {
+  const body    = document.getElementById(`skins-body-${day}`);
+  const chevron = document.getElementById(`chevron-${day}`);
+  if (!body) return;
+  const isOpen = body.classList.toggle('open');
+  chevron.classList.toggle('open', isOpen);
+}
+
+// ── UTILITIES ────────────────────────────────────────────────────
+function formatDate(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  if (isNaN(date)) return d;
+  return date.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+
+function formatLabel(f) {
+  const labels = {
+    BetterBallMatchPlay: 'Match Play',
+    Stableford: 'Stableford',
+    Combined: 'Combined',
+    Individual: 'Individual',
+  };
+  return labels[f] || f || 'TBD';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+syncAll();
+</script>
+</body>
+</html>
