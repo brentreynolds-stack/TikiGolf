@@ -920,7 +920,7 @@
   <h1 id="app-title">Tiki Golf</h1>
   <div class="subtitle" id="app-subtitle">Loading trip data...</div>
   <div class="sync-row">
-    <button class="sync-btn" onclick="connectGoogleAccount()">Connect Google</button>
+    <button class="sync-btn" id="connect-google-btn" onclick="connectGoogleAccount()" style="display:none;">Connect Google</button>
     <button class="sync-btn" onclick="syncAll()">⟳ Sync</button>
     <span class="sync-status" id="sync-status">Not synced</span>
   </div>
@@ -1193,6 +1193,8 @@ async function connectGoogleAccount() {
           return;
         }
         state.authToken = response.access_token;
+        const btn = document.getElementById('connect-google-btn');
+        if (btn) { btn.textContent = '✓ Connected'; btn.style.opacity = '0.7'; }
         const status = document.getElementById('sync-status');
         status.textContent = 'Google connected';
         status.className = 'sync-status ok';
@@ -1565,6 +1567,7 @@ function submitPin() {
 
   if (entered === correct) {
     adminUnlocked = true;
+    document.getElementById('connect-google-btn').style.display = 'inline-block';
     closePinModal();
     if (pendingAdminAction) {
       pendingAdminAction();
