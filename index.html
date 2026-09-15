@@ -1011,7 +1011,7 @@
   </div>
   <div class="tab" onclick="showScreen('scores', this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
-    Scores
+    Score Entry
   </div>
   <div class="tab" onclick="showScreen('leaderboard', this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
@@ -2589,7 +2589,15 @@ function renderSkins() {
   });
 
   const today       = new Date().toDateString();
-  const todayDayIdx = state.courses.findIndex(c => c.date && new Date(c.date).toDateString() === today);
+  const todayDayIdx = state.courses.findIndex(c => {
+    if (!c.date) return false;
+    const parts = String(c.date).split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return d.toDateString() === today;
+    }
+    return new Date(c.date).toDateString() === today;
+  });
   const defaultOpenDay = todayDayIdx >= 0 ? String(todayDayIdx + 1) : '1';
 
   const skinRows = Object.entries(byDay).map(([day, skins]) => {
@@ -2745,6 +2753,14 @@ function toggleSkinsDay(day) {
 // ── UTILITIES ────────────────────────────────────────────────────
 function formatDate(d) {
   if (!d) return '';
+  // Parse manually to avoid UTC midnight → local time shift
+  // '2026-09-16' as new Date() = UTC midnight = Sep 15 in US timezones
+  const parts = String(d).split('-');
+  if (parts.length === 3) {
+    const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    if (!isNaN(date)) return date.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  }
+  // fallback for other date formats
   const date = new Date(d);
   if (isNaN(date)) return d;
   return date.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
