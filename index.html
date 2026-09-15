@@ -2467,25 +2467,25 @@ async function setMatchResult(matchId, day, teeTimeId, winner) {
 
 // ── SKINS ────────────────────────────────────────────────────────
 // skinsModes stores per-day toggle: 'individual' or 'team'
-const skinsModes = {};
+const skinsModes   = {};
+const skinsOpenDays = {}; // persists open/closed state across re-renders
 
 function toggleSkinsMode(day) {
-  // remember which days are currently open before re-render
-  const openDays = new Set();
-  document.querySelectorAll('.collapsible-body.open').forEach(el => {
-    const id = el.id.replace('skins-body-', '');
-    if (id) openDays.add(id);
+  // snapshot current DOM open state into persistent store before re-render
+  document.querySelectorAll('[id^="skins-body-"]').forEach(el => {
+    const d = el.id.replace('skins-body-', '');
+    skinsOpenDays[d] = el.classList.contains('open');
   });
 
   skinsModes[day] = skinsModes[day] === 'team' ? 'individual' : 'team';
   renderSkins();
 
-  // restore open state for all days that were open
-  openDays.forEach(d => {
+  // restore persisted open state
+  Object.entries(skinsOpenDays).forEach(([d, open]) => {
     const body    = document.getElementById(`skins-body-${d}`);
     const chevron = document.getElementById(`chevron-${d}`);
-    if (body)    body.classList.add('open');
-    if (chevron) chevron.classList.add('open');
+    if (body)    body.classList.toggle('open', open);
+    if (chevron) chevron.classList.toggle('open', open);
   });
 }
 
@@ -2616,7 +2616,7 @@ function renderSkins() {
   const defaultOpenDay = todayDayIdx >= 0 ? String(todayDayIdx + 1) : '1';
 
   const skinRows = Object.entries(byDay).map(([day, skins]) => {
-    const isOpen   = day === defaultOpenDay;
+    const isOpen = skinsOpenDays[day] !== undefined ? skinsOpenDays[day] : day === defaultOpenDay;
     const isTeam   = skinsModes[day] === 'team';
     const wonCount = skins.filter(s => !s.tied).length;
     const perSkin  = wonCount > 0 ? Math.floor(dailyPot / wonCount) : 0;
@@ -2763,6 +2763,7 @@ function toggleSkinsDay(day) {
   if (!body) return;
   const isOpen = body.classList.toggle('open');
   chevron.classList.toggle('open', isOpen);
+  skinsOpenDays[day] = isOpen; // persist so toggleSkinsMode can restore it
 }
 
 // ── UTILITIES ────────────────────────────────────────────────────
