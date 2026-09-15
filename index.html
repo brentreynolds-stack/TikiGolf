@@ -2470,8 +2470,23 @@ async function setMatchResult(matchId, day, teeTimeId, winner) {
 const skinsModes = {};
 
 function toggleSkinsMode(day) {
+  // remember which days are currently open before re-render
+  const openDays = new Set();
+  document.querySelectorAll('.collapsible-body.open').forEach(el => {
+    const id = el.id.replace('skins-body-', '');
+    if (id) openDays.add(id);
+  });
+
   skinsModes[day] = skinsModes[day] === 'team' ? 'individual' : 'team';
   renderSkins();
+
+  // restore open state for all days that were open
+  openDays.forEach(d => {
+    const body    = document.getElementById(`skins-body-${d}`);
+    const chevron = document.getElementById(`chevron-${d}`);
+    if (body)    body.classList.add('open');
+    if (chevron) chevron.classList.add('open');
+  });
 }
 
 function renderSkins() {
