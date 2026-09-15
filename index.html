@@ -1076,21 +1076,21 @@
     <div class="modal-row">
       <div class="modal-field">
         <div class="modal-label">Player 1</div>
-        <select id="ttm-p1"></select>
+        <select id="ttm-p1" onchange="refreshTeeTimeDropdowns(document.getElementById('tee-time-modal').dataset.courseId, parseInt(document.getElementById('tee-time-modal').dataset.editStateIdx))"></select>
       </div>
       <div class="modal-field">
         <div class="modal-label">Player 2</div>
-        <select id="ttm-p2"></select>
+        <select id="ttm-p2" onchange="refreshTeeTimeDropdowns(document.getElementById('tee-time-modal').dataset.courseId, parseInt(document.getElementById('tee-time-modal').dataset.editStateIdx))"></select>
       </div>
     </div>
     <div class="modal-row">
       <div class="modal-field">
         <div class="modal-label">Player 3</div>
-        <select id="ttm-p3"></select>
+        <select id="ttm-p3" onchange="refreshTeeTimeDropdowns(document.getElementById('tee-time-modal').dataset.courseId, parseInt(document.getElementById('tee-time-modal').dataset.editStateIdx))"></select>
       </div>
       <div class="modal-field">
         <div class="modal-label">Player 4</div>
-        <select id="ttm-p4"></select>
+        <select id="ttm-p4" onchange="refreshTeeTimeDropdowns(document.getElementById('tee-time-modal').dataset.courseId, parseInt(document.getElementById('tee-time-modal').dataset.editStateIdx))"></select>
       </div>
     </div>
 
@@ -1602,21 +1602,10 @@ function closePinModal() {
 
 // ── TEE TIME MODAL ────────────────────────────────────────────────
 function openTeeTimeModal(courseId, courseIdx, editStateIdx = -1) {
-  const activePlayers = state.players
-    .filter(p => p.active !== 'false')
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const playerOptions = `<option value="">— empty slot —</option>` +
-    activePlayers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-
   const modal = document.getElementById('tee-time-modal');
-  modal.dataset.courseId    = courseId;
-  modal.dataset.courseIdx   = courseIdx;
+  modal.dataset.courseId     = courseId;
+  modal.dataset.courseIdx    = courseIdx;
   modal.dataset.editStateIdx = editStateIdx;
-
-  ['ttm-p1','ttm-p2','ttm-p3','ttm-p4'].forEach(id => {
-    document.getElementById(id).innerHTML = playerOptions;
-  });
 
   const isEdit = editStateIdx >= 0;
   document.getElementById('ttm-modal-title').textContent = isEdit ? 'Edit Tee Time' : 'Add Tee Time';
@@ -1641,7 +1630,48 @@ function openTeeTimeModal(courseId, courseIdx, editStateIdx = -1) {
     document.getElementById('ttm-p4').value    = '';
   }
 
+  // build dropdowns with filtering
+  refreshTeeTimeDropdowns(courseId, editStateIdx);
   modal.style.display = 'flex';
+}
+
+function refreshTeeTimeDropdowns(courseId, editStateIdx = -1) {
+  const activePlayers = state.players
+    .filter(p => p.active !== 'false')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // players already assigned to OTHER tee times on this course
+  const editingTeeTimeId = editStateIdx >= 0 ? state.teeTimes[editStateIdx]?.id : null;
+  const assignedElsewhere = new Set(
+    state.teeTimes
+      .filter(t => String(t.course_id) === String(courseId) && t.id !== editingTeeTimeId)
+      .flatMap(t => [t.player1_id, t.player2_id, t.player3_id, t.player4_id].filter(Boolean))
+  );
+
+  // current selections within this modal
+  const slotIds = ['ttm-p1','ttm-p2','ttm-p3','ttm-p4'];
+  const currentValues = slotIds.map(id => document.getElementById(id)?.value || '');
+
+  slotIds.forEach((slotId, slotIdx) => {
+    const sel = document.getElementById(slotId);
+    if (!sel) return;
+    const myValue = currentValues[slotIdx];
+
+    // players selected in OTHER slots of this modal
+    const selectedInOtherSlots = new Set(
+      currentValues.filter((v, i) => i !== slotIdx && v)
+    );
+
+    sel.innerHTML = `<option value="">— empty slot —</option>` +
+      activePlayers
+        .filter(p => {
+          if (assignedElsewhere.has(p.id)) return false;     // assigned to another tee time
+          if (selectedInOtherSlots.has(p.id)) return false;  // selected in another slot this modal
+          return true;
+        })
+        .map(p => `<option value="${p.id}"${p.id === myValue ? ' selected' : ''}>${p.name}</option>`)
+        .join('');
+  });
 }
 
 function closeTeeTimeModal() {
