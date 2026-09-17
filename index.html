@@ -2791,14 +2791,20 @@ function renderSkins() {
   // ── CLOSEST TO PIN — per day, per par 3 hole ──
   // identify all par 3 holes per course
   const ctpByDay = {};
+  let totalPar3s = 0;
   state.courses.forEach((course, dayIdx) => {
     const day    = String(dayIdx + 1);
     const par3s  = [];
     for (let h = 1; h <= 18; h++) {
       if (parseInt(course[`h${h}_par`]) === 3) par3s.push(h);
     }
-    if (par3s.length) ctpByDay[day] = { courseName: course.name || `Day ${day}`, courseId: course.id, par3s };
+    if (par3s.length) {
+      ctpByDay[day] = { courseName: course.name || `Day ${day}`, courseId: course.id, par3s };
+      totalPar3s += par3s.length;
+    }
   });
+
+  const ctpPerHole = totalPar3s > 0 ? Math.floor(ctpPot / totalPar3s) : 0;
 
   const ctpRows = Object.entries(ctpByDay).map(([day, { courseName, courseId, par3s }]) => {
     const holeRows = par3s.map(hole => {
@@ -2806,23 +2812,28 @@ function renderSkins() {
       const player = entry ? state.players.find(p => String(p.id) === String(entry.player_id)) : null;
       const stateIdx = entry ? state.closestPin.indexOf(entry) : -1;
       return `
-        <div class="skin-row" style="grid-template-columns:44px 1fr auto;">
-          <div class="skin-hole">H${hole}</div>
-          <div style="font-weight:${player ? '500' : '400'};color:${player ? 'inherit' : 'var(--gray-mid)'};">
+        <div style="display:flex;justify-content:space-between;align-items:center;
+                    padding:10px 14px;border-bottom:1px solid var(--gray-light);">
+          <div style="font-weight:700;font-size:13px;color:var(--gray-mid);min-width:36px;">H${hole}</div>
+          <div style="flex:1;font-weight:${player ? '500' : '400'};color:${player ? 'inherit' : 'var(--gray-mid)'};">
             ${player ? player.name : 'Not set'}
+            ${entry?.notes ? `<span style="font-size:11px;color:var(--gray-mid);margin-left:6px;">${entry.notes}</span>` : ''}
           </div>
+          ${player ? `<div style="font-weight:700;color:var(--green-mid);margin-right:10px;">$${ctpPerHole}</div>` : ''}
           <button onclick="requireAdmin(() => openCtpModal('${day}', '${courseId}', ${hole}, ${stateIdx}))"
             style="background:var(--gray-light);border:none;border-radius:6px;padding:5px 10px;
                    font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;
-                   color:var(--green-dark);">
-            ${player ? '✏️ Edit' : '+ Set'}
+                   color:var(--green-dark);flex-shrink:0;">
+            ${player ? '✏️' : '+ Set'}
           </button>
         </div>`;
     }).join('');
 
     return `
       <div class="section-label" style="margin-top:16px;">${courseName} — Day ${day}</div>
-      <div class="skins-table">${holeRows}</div>`;
+      <div class="skins-table" style="border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        ${holeRows}
+      </div>`;
   }).join('');
 
   el.innerHTML = `
@@ -2843,7 +2854,7 @@ function renderSkins() {
       <div>
         <div class="pot-label">Closest to Pin</div>
         <div class="pot-amount">$${ctpPot}</div>
-        <div style="font-size:11px;color:var(--gray-mid);margin-top:2px;">All par 3s · admin entry</div>
+        <div style="font-size:11px;color:var(--gray-mid);margin-top:2px;">$${ctpPerHole}/hole × ${totalPar3s} par 3s</div>
       </div>
     </div>
 
