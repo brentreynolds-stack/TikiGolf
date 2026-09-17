@@ -1029,6 +1029,38 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- CLOSEST TO PIN MODAL -->
+<div class="modal-overlay" id="ctp-modal" onclick="if(event.target===this)closeCtpModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title" style="margin:0;">Closest to Pin</div>
+      <button id="ctp-delete-btn" style="display:none;background:#fce4e4;color:var(--red);
+              border:none;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;
+              font-family:'Inter',sans-serif;cursor:pointer;" onclick="deleteCtpEntry()">
+        🗑 Clear
+      </button>
+    </div>
+    <div id="ctp-hole-label" style="font-size:13px;color:var(--gray-mid);margin-bottom:14px;"></div>
+    <div class="modal-field" style="margin-bottom:16px;">
+      <div class="modal-label">Closest Player</div>
+      <select id="ctp-player">
+        <option value="">Select player...</option>
+      </select>
+    </div>
+    <div class="modal-field" style="margin-bottom:0;">
+      <div class="modal-label">Notes (optional)</div>
+      <input type="text" id="ctp-notes" placeholder="e.g. 3 feet 2 inches..."
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-light);border-radius:8px;
+               font-size:14px;font-family:'Inter',sans-serif;background:var(--white);" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCtpModal()">Cancel</button>
+      <button class="btn-save" onclick="saveCtpEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- PIN AUTH MODAL -->
 <div class="pin-modal-overlay" id="pin-modal">
   <div class="pin-box">
@@ -1128,8 +1160,9 @@ const state = {
   scores:   [],
   skins:    [],
   birdies:  [],
-  matchups: [],
-  teeTimes: [],
+  matchups:   [],
+  teeTimes:   [],
+  closestPin: [],
   lbDay:    'overall',
   loaded:   false,
   authToken: null,
@@ -1280,7 +1313,7 @@ async function syncAll() {
   status.textContent = 'Syncing...';
   status.className = 'sync-status';
   try {
-    const [cfg, players, courses, scores, skins, birdies, teeTimes, matchups] = await Promise.all([
+    const [cfg, players, courses, scores, skins, birdies, teeTimes, matchups, closestPin] = await Promise.all([
       safeReadSheet('config!A:B'),
       safeReadSheet('players!A:F'),
       safeReadSheet('courses!A:AE'),
@@ -1289,6 +1322,7 @@ async function syncAll() {
       safeReadSheet('birdies_deuces!A:F'),
       safeReadSheet('tee_times!A:I'),
       safeReadSheet('matchups!A:F'),
+      safeReadSheet('closest_pin!A:F'),
     ]);
 
     state.config   = configToObject(cfg);
@@ -1297,8 +1331,9 @@ async function syncAll() {
     state.scores   = rowsToObjects(scores);
     state.skins    = rowsToObjects(skins);
     state.birdies  = rowsToObjects(birdies);
-    state.teeTimes = rowsToObjects(teeTimes);
-    state.matchups = rowsToObjects(matchups);
+    state.teeTimes  = rowsToObjects(teeTimes);
+    state.matchups  = rowsToObjects(matchups);
+    state.closestPin = rowsToObjects(closestPin);
     state.loaded   = true;
 
     updateHeader();
@@ -2751,6 +2786,45 @@ function renderSkins() {
         </div>`;
     }).join('') || `<div style="padding:16px;text-align:center;font-size:13px;color:var(--gray-mid);">No birdies or eagles yet</div>`;
 
+  const ctpPot = parseFloat(state.config.closest_pin_pot || state.config['closest_pin_pot']) || 0;
+
+  // ── CLOSEST TO PIN — per day, per par 3 hole ──
+  // identify all par 3 holes per course
+  const ctpByDay = {};
+  state.courses.forEach((course, dayIdx) => {
+    const day    = String(dayIdx + 1);
+    const par3s  = [];
+    for (let h = 1; h <= 18; h++) {
+      if (parseInt(course[`h${h}_par`]) === 3) par3s.push(h);
+    }
+    if (par3s.length) ctpByDay[day] = { courseName: course.name || `Day ${day}`, courseId: course.id, par3s };
+  });
+
+  const ctpRows = Object.entries(ctpByDay).map(([day, { courseName, courseId, par3s }]) => {
+    const holeRows = par3s.map(hole => {
+      const entry  = state.closestPin.find(c => String(c.day) === day && String(c.hole) === String(hole));
+      const player = entry ? state.players.find(p => String(p.id) === String(entry.player_id)) : null;
+      const stateIdx = entry ? state.closestPin.indexOf(entry) : -1;
+      return `
+        <div class="skin-row" style="grid-template-columns:44px 1fr auto;">
+          <div class="skin-hole">H${hole}</div>
+          <div style="font-weight:${player ? '500' : '400'};color:${player ? 'inherit' : 'var(--gray-mid)'};">
+            ${player ? player.name : 'Not set'}
+          </div>
+          <button onclick="requireAdmin(() => openCtpModal('${day}', '${courseId}', ${hole}, ${stateIdx}))"
+            style="background:var(--gray-light);border:none;border-radius:6px;padding:5px 10px;
+                   font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;
+                   color:var(--green-dark);">
+            ${player ? '✏️ Edit' : '+ Set'}
+          </button>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="section-label" style="margin-top:16px;">${courseName} — Day ${day}</div>
+      <div class="skins-table">${holeRows}</div>`;
+  }).join('');
+
   el.innerHTML = `
     <div class="skins-summary">
       <div>
@@ -2765,6 +2839,14 @@ function renderSkins() {
       </div>
     </div>
 
+    <div class="skins-summary" style="margin-top:10px;">
+      <div>
+        <div class="pot-label">Closest to Pin</div>
+        <div class="pot-amount">$${ctpPot}</div>
+        <div style="font-size:11px;color:var(--gray-mid);margin-top:2px;">All par 3s · admin entry</div>
+      </div>
+    </div>
+
     <div class="section-label">Skins Results</div>
     ${skinRows || `<div class="empty"><p>No scores entered yet.<br>Skins are calculated automatically.</p></div>`}
 
@@ -2775,6 +2857,9 @@ function renderSkins() {
       </div>
       ${bdRows}
     </div>
+
+    <div class="section-label" style="margin-top:20px;">Closest to Pin 📍</div>
+    ${ctpRows || `<div class="empty"><p>Add course par data to see par 3 holes.</p></div>`}
   `;
 }
 
@@ -2785,6 +2870,99 @@ function toggleSkinsDay(day) {
   const isOpen = body.classList.toggle('open');
   chevron.classList.toggle('open', isOpen);
   skinsOpenDays[day] = isOpen; // persist so toggleSkinsMode can restore it
+}
+
+// ── CLOSEST TO PIN ───────────────────────────────────────────────
+function openCtpModal(day, courseId, hole, stateIdx) {
+  const modal = document.getElementById('ctp-modal');
+  modal.dataset.day      = day;
+  modal.dataset.courseId = courseId;
+  modal.dataset.hole     = hole;
+  modal.dataset.stateIdx = stateIdx;
+
+  const course  = state.courses.find(c => String(c.id) === String(courseId));
+  const dayName = course?.name || `Day ${day}`;
+  document.getElementById('ctp-hole-label').textContent = `${dayName} · Hole ${hole} (Par 3)`;
+
+  const isEdit  = stateIdx >= 0;
+  document.getElementById('ctp-delete-btn').style.display = isEdit ? 'block' : 'none';
+
+  // populate player dropdown
+  const activePlayers = state.players
+    .filter(p => p.active !== 'false')
+    .sort((a,b) => a.name.localeCompare(b.name));
+  document.getElementById('ctp-player').innerHTML =
+    `<option value="">Select player...</option>` +
+    activePlayers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+  if (isEdit) {
+    const entry = state.closestPin[stateIdx];
+    document.getElementById('ctp-player').value = entry?.player_id || '';
+    document.getElementById('ctp-notes').value  = entry?.notes || '';
+  } else {
+    document.getElementById('ctp-player').value = '';
+    document.getElementById('ctp-notes').value  = '';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeCtpModal() {
+  document.getElementById('ctp-modal').style.display = 'none';
+}
+
+async function saveCtpEntry() {
+  const modal    = document.getElementById('ctp-modal');
+  const day      = modal.dataset.day;
+  const courseId = modal.dataset.courseId;
+  const hole     = modal.dataset.hole;
+  const stateIdx = parseInt(modal.dataset.stateIdx);
+  const playerId = document.getElementById('ctp-player').value;
+  const notes    = document.getElementById('ctp-notes').value;
+
+  if (!playerId) { showToast('Select a player'); return; }
+
+  try {
+    showToast('Saving...');
+    const id  = `ctp_d${day}_h${hole}`;
+    const row = [id, courseId, day, hole, playerId, notes];
+
+    if (stateIdx >= 0 && state.closestPin[stateIdx]) {
+      const existing = state.closestPin[stateIdx];
+      await writeSheet(`closest_pin!A${existing._rowNum}:F${existing._rowNum}`, [row]);
+      state.closestPin[stateIdx] = { ...existing, player_id: playerId, notes };
+    } else {
+      await appendSheet('closest_pin!A:F', [row]);
+      state.closestPin.push({ id, course_id: courseId, day, hole, player_id: playerId, notes, _rowNum: state.closestPin.length + 2 });
+    }
+
+    closeCtpModal();
+    renderSkins();
+    showToast('✓ Closest to pin saved!');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Save failed — check connection');
+  }
+}
+
+async function deleteCtpEntry() {
+  const modal    = document.getElementById('ctp-modal');
+  const stateIdx = parseInt(modal.dataset.stateIdx);
+  if (stateIdx < 0) return;
+  const entry = state.closestPin[stateIdx];
+  if (!entry || !confirm('Clear this closest to pin entry?')) return;
+
+  try {
+    showToast('Clearing...');
+    await writeSheet(`closest_pin!A${entry._rowNum}:F${entry._rowNum}`, [['','','','','','']]);
+    state.closestPin.splice(stateIdx, 1);
+    closeCtpModal();
+    renderSkins();
+    showToast('✓ Entry cleared');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Clear failed');
+  }
 }
 
 // ── UTILITIES ────────────────────────────────────────────────────
