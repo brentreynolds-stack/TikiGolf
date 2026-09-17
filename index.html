@@ -1463,28 +1463,52 @@ function showCourseDetail(idx) {
 
   const teeTimeRows = courseTees.length
     ? courseTees.map((t, tIdx) => {
-        const playerIds = [t.player1_id, t.player2_id, t.player3_id, t.player4_id].filter(Boolean);
-        const names = playerIds.map(id => {
-          const p = state.players.find(p => String(p.id) === String(id));
-          return p ? p.name.split(' ')[0] + ' ' + (p.name.split(' ')[1]?.[0] || '') + '.' : '?';
-        });
-        const hole = t.starting_hole === '10' ? 'Hole 10' : 'Hole 1';
-        const teamDots = playerIds.map(id => {
-          const p = state.players.find(p => String(p.id) === String(id));
-          const color = p?.team?.toLowerCase() === 'red' ? 'var(--red)' : p?.team?.toLowerCase() === 'blue' ? 'var(--blue)' : 'var(--gray-mid)';
-          return `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};margin-right:2px;"></span>`;
-        }).join('');
+        const hole     = t.starting_hole === '10' ? 'Hole 10' : 'Hole 1';
         const stateIdx = state.teeTimes.findIndex(x => x.id === t.id);
+
+        // helper: get player display name + team color dot, or null if empty
+        const playerBlock = (id) => {
+          if (!id) return null;
+          const p     = state.players.find(p => String(p.id) === String(id));
+          const name  = p ? p.name.split(' ')[0] + ' ' + (p.name.split(' ')[1]?.[0] || '') + '.' : '?';
+          const color = p?.team?.toLowerCase() === 'red' ? 'var(--red)' : p?.team?.toLowerCase() === 'blue' ? 'var(--blue)' : 'var(--gray-mid)';
+          return `<span style="display:inline-flex;align-items:center;gap:4px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0;display:inline-block;"></span>
+            ${name}
+          </span>`;
+        };
+
+        const p1 = playerBlock(t.player1_id);
+        const p2 = playerBlock(t.player2_id);
+        const p3 = playerBlock(t.player3_id);
+        const p4 = playerBlock(t.player4_id);
+
+        const team1 = [p1, p2].filter(Boolean);
+        const team2 = [p3, p4].filter(Boolean);
+
+        const team1Html = team1.length
+          ? `<div style="flex:1;">
+               <div style="font-size:10px;font-weight:600;color:var(--gray-mid);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.4px;">Team 1</div>
+               <div style="font-size:13px;font-weight:500;display:flex;flex-direction:column;gap:2px;">${team1.join('')}</div>
+             </div>` : '';
+
+        const team2Html = team2.length
+          ? `<div style="flex:1;">
+               <div style="font-size:10px;font-weight:600;color:var(--gray-mid);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.4px;">Team 2</div>
+               <div style="font-size:13px;font-weight:500;display:flex;flex-direction:column;gap:2px;">${team2.join('')}</div>
+             </div>` : '';
+
+        const divider = team1.length && team2.length
+          ? `<div style="width:1px;background:var(--gray-light);margin:0 10px;align-self:stretch;"></div>` : '';
+
         return `
           <div class="tee-time-row">
             <div class="tee-time-slot">
               <div class="tee-time-clock">${t.tee_time}</div>
               <div class="tee-time-hole">${hole}</div>
             </div>
-            <div class="tee-time-players">
-              <div>${teamDots}</div>
-              <div class="tee-time-names">${names.join(', ')}</div>
-              ${t.notes ? `<div class="tee-time-note">${t.notes}</div>` : ''}
+            <div class="tee-time-players" style="display:flex;gap:0;flex:1;">
+              ${team1Html}${divider}${team2Html}
             </div>
             <div class="tee-time-actions">
               <button class="tee-action-btn" title="Edit"
