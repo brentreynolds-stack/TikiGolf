@@ -2581,8 +2581,10 @@ function renderSkins() {
         const id1 = String(winners[0].player_id);
         const id2 = String(winners[1].player_id);
 
-        // Check tee time pairings first (P1&P2 = partners, P3&P4 = partners)
+        // Check tee time pairings for THIS day's course only
+        const dayCourseId = course.id;
         const teeTime = state.teeTimes.find(t => {
+          if (String(t.course_id) !== String(dayCourseId)) return false;
           const slots = [t.player1_id, t.player2_id, t.player3_id, t.player4_id].map(String);
           return slots.includes(id1) && slots.includes(id2);
         });
